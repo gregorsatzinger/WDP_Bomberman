@@ -1,10 +1,25 @@
+</html>
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bomberman</title>
+</head>
+<body>
+    <canvas id="ctx" width="600" height="400" style="background-color: #e7e7e7;"></canvas>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var ctx = document.getElementById("ctx").getContext("2d");
+        ctx.font = '16px Arial';
+        var socket = io();
 
-  </head>
-
-  <body>
-  </body>
+        socket.on('newPositions', (data) => {
+            ctx.clearRect(0, 0, 600, 400);
+            data.forEach(element => {
+                ctx.fillText(element.name, element.x, element.y);
+            });
+        });
+    </script>
+</body>
 </html>

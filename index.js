@@ -12,9 +12,13 @@ app.get('/script.js', (req, res) => {
 
 const GB_SIZE = 400; //gameboard size
 const PLAYER_SIZE = GB_SIZE/10;
-const MOVING_STEP = 3; //how far does a player move by one timer interval
+const BOMB_RADIUS = PLAYER_SIZE/3;
+const BOMB_MOVE_FACTOR = PLAYER_SIZE/2; //to place bomb in the middle of the player
+
+const MOVING_STEP = 5; //how far does a player move by one timer interval
 
 const SOCKET_ARR = []; //array of active players
+const BOMBS = [];
 let currentPlayers = 0;
 
 function getRandomColor() {
@@ -40,7 +44,15 @@ io.on('connection', (player) => {
 
     player.on('direction', (data) => {
         player.direction = data.direction;
-    })
+    });
+
+    player.on('bomb', () => {
+        BOMBS.push({
+            x: player.x + BOMB_MOVE_FACTOR,
+            y: player.y + BOMB_MOVE_FACTOR,
+            radius: BOMB_RADIUS
+        });
+    });
 
     player.on('disconnect', () => {
         delete SOCKET_ARR[player.id];
@@ -78,24 +90,29 @@ function updatePlayerPositions(player) {
 }
 
 setInterval(() => {
-    const pack = [];
+    /* send game update to all players */
+
+    //update players positions
+    const playerPack = [];
     // Fill pack with information of all players
     for(let i in SOCKET_ARR) {
         const player = SOCKET_ARR[i];
         updatePlayerPositions(player);
-        pack.push({ name: player.name, 
+        playerPack.push({ name: player.name, 
                     x: player.x, 
                     y: player.y,
                     color: player.color, 
                     width: PLAYER_SIZE, //not safed for each player since the
                     height: PLAYER_SIZE //size is the same for everybody
+                    /* alive: true */
                 });
     }
-    //TODO: check if bomb timer expired ---> peng
 
-    // Send pack to all players
-    io.emit('newPositions', pack);
-}, 1000/30);
+    //TODO: update bombs. check if bomb timer expired ---> peng --> hitting a player?
+
+    // Send pack(s) to all players
+    io.emit('gameUpdate', playerPack, BOMBS);
+}, 20);
 
 http.listen(3000, () => {
     console.log('listening on *:3000');

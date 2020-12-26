@@ -24,6 +24,10 @@ function KeyToIndex(code) {
     }
 }
 
+/* There can be up to 2 active directions, but a player only moves vertically or horizontally.
+   If the player holds ArrowRIGHT, and then additionally holds ArrowDOWN, he will move to
+   the last-pressed direction (DOWN) but we also want to memorize that he is pressing ArrowRIGHT.
+   So when releasing ArrowDOWN while still holding ArrowRIGHT, he must move to RIGHT again.*/
 function handleMovement(e) {
     if(e.type === "keydown") {
         let index = KeyToIndex(e.code);
@@ -39,10 +43,6 @@ function handleMovement(e) {
                 //player is moving to latest direction, but previous direction
                 //is also borne in mind (in directions-array)
                 current_direction = index;
-                    
-                //TODO emit current_direction
-                console.log(directions);
-                console.log(current_direction);
                 socket.emit('direction', {direction: current_direction});
             }
         }
@@ -56,12 +56,12 @@ function handleMovement(e) {
             i++;
         }
         current_direction = i;
-
-        //TODO emit current_direction
-        console.log(directions);
-        console.log(current_direction);
         socket.emit('direction', {direction: current_direction});
     }
+}
+
+function handleBombPlacing(e) {
+    socket.emit('bomb');
 }
 
 function keyEventHandler(e) {
@@ -71,10 +71,12 @@ function keyEventHandler(e) {
             e.code === "ArrowRight" ||
             e.code === "ArrowDown") {
         handleMovement(e);
-    } //else ... TODO: place bomb
+    } else if(e.code === "Space" && e.type === "keydown") {
+        handleBombPlacing(e);    
+    }
 }
 
-render = function(players) {
+function renderPlayers(players) {
     ctx.clearRect(0, 0, 400, 400);
     players.forEach(p => {
         ctx.fillStyle = p.color;
@@ -85,6 +87,17 @@ render = function(players) {
     });
 }
 
-socket.on('newPositions', (players) => {
-    render(players);
+function renderBombs(bombs) {
+    bombs.forEach(b => {
+        ctx.fillStyle = "#000000";
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, 2 * Math.PI);
+        ctx.closePath();
+        ctx.fill();
+    })
+}
+
+socket.on('gameUpdate', (players, bombs) => {
+    renderPlayers(players);
+    renderBombs(bombs);
 });

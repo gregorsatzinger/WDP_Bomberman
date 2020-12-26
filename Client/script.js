@@ -3,6 +3,13 @@ window.onload = function() {
 	window.onkeyup = keyEventHandler;
 }
 
+const GB_SIZE = 400; //gameboard size
+
+//define here AND in server-side index.js?
+//define only on server side and client sends request?
+//need help.
+const DETONATION_WIDTH = GB_SIZE/10*3;
+
 let ctx = document.getElementById("ctx").getContext("2d");
 let socket = io();
 
@@ -89,11 +96,23 @@ function renderPlayers(players) {
 
 function renderBombs(bombs) {
     bombs.forEach(b => {
-        ctx.fillStyle = "#000000";
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.radius, 0, 2 * Math.PI);
-        ctx.closePath();
-        ctx.fill();
+        console.log(b.detonated);
+        if(!b.detonated) { //draw bomb
+            ctx.fillStyle = "#000000";
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.radius, 0, 2 * Math.PI);
+            ctx.closePath();
+            ctx.fill();
+        } else { //draw explosion
+            ctx.fillStyle = "#ffa421";
+            ctx.beginPath();
+            //horizontal rect
+            ctx.rect(b.x - DETONATION_WIDTH/2, b.y - b.radius, DETONATION_WIDTH, b.radius*2);
+            //vertical rect
+            ctx.rect(b.x - b.radius, b.y - DETONATION_WIDTH/2, b.radius*2, DETONATION_WIDTH);
+            ctx.closePath();
+            ctx.fill();
+        }
     })
 }
 

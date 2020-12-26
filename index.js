@@ -9,16 +9,17 @@ app.get('/', (req, res) => {
 app.get('/script.js', (req, res) => {
     res.sendFile(__dirname + '/client/script.js');
 })
-
+const TIMER_INTERVAL = 20; //[ms]
 const GB_SIZE = 400; //gameboard size
 const PLAYER_SIZE = GB_SIZE/10;
 const BOMB_RADIUS = PLAYER_SIZE/3;
 const BOMB_MOVE_FACTOR = PLAYER_SIZE/2; //to place bomb in the middle of the player
-
+const BOMB_TIMER = 3/*s*/ * 1000/TIMER_INTERVAL; //time until detonation
+const BOMB_DETONATION_TIME = 1/*s*/ * 1000/TIMER_INTERVAL; //duration of detonation
 const MOVING_STEP = 5; //how far does a player move by one timer interval
 
-const SOCKET_ARR = []; //array of active players
-const BOMBS = [];
+const socket_arr = []; //array of active players
+const bombs = [];
 let currentPlayers = 0;
 
 function getRandomColor() {
@@ -40,22 +41,25 @@ io.on('connection', (player) => {
     player.name = "Player " + player.id;
 
     //add to active players
-    SOCKET_ARR[player.id] = player;
+    socket_arr[player.id] = player;
 
     player.on('direction', (data) => {
         player.direction = data.direction;
     });
 
     player.on('bomb', () => {
-        BOMBS.push({
+        bombs.push({
             x: player.x + BOMB_MOVE_FACTOR,
             y: player.y + BOMB_MOVE_FACTOR,
-            radius: BOMB_RADIUS
+            radius: BOMB_RADIUS,
+            timer: BOMB_TIMER,
+            detonated: false
         });
     });
 
     player.on('disconnect', () => {
-        delete SOCKET_ARR[player.id];
+        socket_arr.splice(player.id,1); //better than delete (?)
+        //delete socket_arr[player.id];
         console.log('a user disconnected');
     });
 
@@ -95,8 +99,7 @@ setInterval(() => {
     //update players positions
     const playerPack = [];
     // Fill pack with information of all players
-    for(let i in SOCKET_ARR) {
-        const player = SOCKET_ARR[i];
+    socket_arr.forEach(player => {
         updatePlayerPositions(player);
         playerPack.push({ name: player.name, 
                     x: player.x, 
@@ -105,13 +108,25 @@ setInterval(() => {
                     width: PLAYER_SIZE, //not safed for each player since the
                     height: PLAYER_SIZE //size is the same for everybody
                     /* alive: true */
-                });
+        });
+    });
+        
+    //TODO: update bombs. check if bomb timer expired ---> peng --> hitting a player?
+    for(let i = 0; i < bombs.length; i++) {
+        const bomb = bombs[i];
+        bomb.timer--;
+        if(bomb.timer <= 0) {
+            if(!bomb.detonated) { //bomb detonates now
+                bomb.detonated = true;
+                bomb.timer = BOMB_DETONATION_TIME;
+            } else { //detonation is over
+                bombs.splice(i,1);
+            }
+        }
     }
 
-    //TODO: update bombs. check if bomb timer expired ---> peng --> hitting a player?
-
     // Send pack(s) to all players
-    io.emit('gameUpdate', playerPack, BOMBS);
+    io.emit('gameUpdate', playerPack, bombs);
 }, 20);
 
 http.listen(3000, () => {

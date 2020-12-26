@@ -1,0 +1,16 @@
+body {
+    margin: 0px;
+    font-family: 'Open Sans', sans-serif;
+}
+header {
+    padding-left: 2em;
+    background-color:	#cccccb;
+}
+section {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+h1 {
+    font-family: 'IBM Plex Mono', monospace;
+}

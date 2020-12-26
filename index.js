@@ -1,6 +1,10 @@
-const app = require('express')();
+const express = require('express'); 
+const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
+
+// https://expressjs.com/en/starter/static-files.html
+app.use(express.static(__dirname + '/public'));
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/client/index.html');
@@ -8,7 +12,8 @@ app.get('/', (req, res) => {
 
 app.get('/script.js', (req, res) => {
     res.sendFile(__dirname + '/client/script.js');
-})
+});
+
 const TIMER_INTERVAL = 20; //[ms]
 const GB_SIZE = 400; //gameboard size
 const PLAYER_SIZE = GB_SIZE/10;

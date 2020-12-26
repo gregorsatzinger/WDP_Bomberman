@@ -2,12 +2,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="css/styles.css" type="text/css">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=Open+Sans&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bomberman</title>
 </head>
 <body>
-    <canvas id="ctx" width="400" height="400" style="background-color: #e7e7e7;"></canvas>
+    <header>
+        <h1>Bomberman</h1>
+    </header>
+    <section>
+        <canvas id="ctx" width="400" height="400" style="background-color: #e7e7e7;"></canvas>
+    </section>
     <script src="/socket.io/socket.io.js"></script>
     <script defer src="script.js"></script>
 </body>

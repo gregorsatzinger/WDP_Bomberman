@@ -96,7 +96,6 @@ function renderPlayers(players) {
 
 function renderBombs(bombs) {
     bombs.forEach(b => {
-        console.log(b.detonated);
         if(!b.detonated) { //draw bomb
             ctx.fillStyle = "#000000";
             ctx.beginPath();
@@ -113,7 +112,7 @@ function renderBombs(bombs) {
             ctx.closePath();
             ctx.fill();
         }
-    })
+    });
 }
 
 socket.on('gameUpdate', (players, bombs) => {

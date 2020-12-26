@@ -16,6 +16,7 @@ const BOMB_RADIUS = PLAYER_SIZE/3;
 const BOMB_MOVE_FACTOR = PLAYER_SIZE/2; //to place bomb in the middle of the player
 const BOMB_TIMER = 3/*s*/ * 1000/TIMER_INTERVAL; //time until detonation
 const BOMB_DETONATION_TIME = 1/*s*/ * 1000/TIMER_INTERVAL; //duration of detonation
+const BOMB_DETONATION_WIDTH = GB_SIZE/10*3;
 const MOVING_STEP = 5; //how far does a player move by one timer interval
 
 const socket_arr = []; //array of active players
@@ -93,6 +94,27 @@ function updatePlayerPositions(player) {
     player.y = y_;
 }
 
+class Explosion {
+    constructor(x, y) {
+        //horizontal rect (left-top and right-bottom corners)
+        hor_lt_x = x - DETONATION_WIDTH/2;
+        hor_lt_y = y - BOMB_RADIUS;
+        hor_rb_x = hor_lt_x + DETONATION_WIDTH;
+        hor_rb_y = hor_lt_y + BOMB_RADIUS*2
+
+        //vertical rect
+        vert_lt_x = x - BOMB_RADIUS;
+        vert_lt_y = y - DETONATION_WIDTH/2;
+        vert_rb_x = vert_lt_x + BOMB_RADIUS*2;
+        vert_rb_y = vert_lt_y + DETONATION_WIDTH;
+    }
+    hits(player) {
+        //TODO: any point of player touching one of the rectangles?
+
+        //return true/false
+    }
+}
+
 setInterval(() => {
     /* send game update to all players */
 
@@ -107,20 +129,34 @@ setInterval(() => {
                     color: player.color, 
                     width: PLAYER_SIZE, //not safed for each player since the
                     height: PLAYER_SIZE //size is the same for everybody
-                    /* alive: true */
         });
     });
         
-    //TODO: update bombs. check if bomb timer expired ---> peng --> hitting a player?
     for(let i = 0; i < bombs.length; i++) {
         const bomb = bombs[i];
+
         bomb.timer--;
-        if(bomb.timer <= 0) {
-            if(!bomb.detonated) { //bomb detonates now
+
+        if(!bomb.detonated) { //bomb is alive
+            if(bomb.timer <= 0) { //bomb detonates now
                 bomb.detonated = true;
-                bomb.timer = BOMB_DETONATION_TIME;
-            } else { //detonation is over
-                bombs.splice(i,1);
+                bomb.timer = BOMB_DETONATION_TIME; //reset timer to detonation time
+                bomb.explosion = new Explosion(bomb.x, bomb.y); //calc explosion range
+            }
+        } else { //bomb is exploding currently
+            //check if hitting a player
+
+            //TODO: implement Explosion.hits()
+            /*for(let i = 0; i < socket_arr.length; i++) {
+                if(bomb.explosion.hits(socket_arr[i])) {
+                    //TODO: handling of gameOver on client side
+                    socket_arr[i].emit('gameOver'); //send game over signal to client
+                    socket_arr.splice(i, 1); //delete player
+                }
+            }*/
+
+            if(bomb.timer <= 0) { //detonation is over
+                bombs.splice(i,1); //delete bomb
             }
         }
     }

@@ -96,7 +96,29 @@ io.on('connection', (player) => {
     }
 });
 
+class Explosion {
+    constructor(x, y) {
+        //horizontal rect (left-top and right-bottom corners)
+        hor_lt_x = x - BOMB_DETONATION_WIDTH/2;
+        hor_lt_y = y - BOMB_RADIUS;
+        hor_rb_x = hor_lt_x + BOMB_DETONATION_WIDTH;
+        hor_rb_y = hor_lt_y + BOMB_RADIUS*2
+
+        //vertical rect
+        vert_lt_x = x - BOMB_RADIUS;
+        vert_lt_y = y - BOMB_DETONATION_WIDTH/2;
+        vert_rb_x = vert_lt_x + BOMB_RADIUS*2;
+        vert_rb_y = vert_lt_y + BOMB_DETONATION_WIDTH;
+    }
+    hits(player) {
+        //TODO: any point of player touching one of the rectangles?
+
+        //return true/false
+    }
+}
+
 function updatePlayerPositions(player) {
+    
     switch(player.direction) {
         case 0:     //left
             x_ = player.pos.x - MOVING_STEP;
@@ -123,72 +145,47 @@ function updatePlayerPositions(player) {
     player.pos.y = y_;
 }
 
-class Explosion {
-    constructor(x, y) {
-        //horizontal rect (left-top and right-bottom corners)
-        hor_lt_x = x - BOMB_DETONATION_WIDTH/2;
-        hor_lt_y = y - BOMB_RADIUS;
-        hor_rb_x = hor_lt_x + BOMB_DETONATION_WIDTH;
-        hor_rb_y = hor_lt_y + BOMB_RADIUS*2
-
-        //vertical rect
-        vert_lt_x = x - BOMB_RADIUS;
-        vert_lt_y = y - BOMB_DETONATION_WIDTH/2;
-        vert_rb_x = vert_lt_x + BOMB_RADIUS*2;
-        vert_rb_y = vert_lt_y + BOMB_DETONATION_WIDTH;
-    }
-    hits(player) {
-        //TODO: any point of player touching one of the rectangles?
-
-        //return true/false
-    }
-}
-
 function startGameInterval(roomName) {
     const interval = setInterval(() => {
-        /* send game update to all rooms */
+        /* send game update to current room */
 
-        //update gamestate / every rooms
-        for (const key in gameState) {
-            const currRoomState = gameState[key];
-            const player1 = currRoomState.players[0];
-            const player2 = currRoomState.players[1];
-            updatePlayerPositions(player1);
-            updatePlayerPositions(player2);
+        //update gamestate of room
+        const currRoomState = gameState[roomName];
+        updatePlayerPositions(currRoomState.players[0]);
+        updatePlayerPositions(currRoomState.players[1]);
 
-            const bombs = currRoomState.bombs;
-            // TODO: 
-            bombs.forEach(bomb => {
-                bomb.timer--;
+        const bombs = currRoomState.bombs;
+        // TODO: 
+        bombs.forEach(bomb => {
+            bomb.timer--;
 
-                if(!bomb.detonated) { //bomb is alive
-                    if(bomb.timer <= 0) { //bomb detonates now
-                        bomb.detonated = true;
-                        bomb.timer = BOMB_DETONATION_TIME; //reset timer to detonation time
-                        //bomb.explosion = new Explosion(bomb.x, bomb.y); //calc explosion range
-                    }
-                } else { //bomb is exploding currently
-                    //check if hitting a player
-    
-                    //TODO: implement Explosion.hits()
-                    /*for(let i = 0; i < socket_arr.length; i++) {
-                        if(bomb.explosion.hits(socket_arr[i])) {
-                            //TODO: handling of gameOver on client side
-                            socket_arr[i].emit('gameOver'); //send game over signal to client
-                            socket_arr.splice(i, 1); //delete player
-                        }
-                    }*/
-    
-                    if(bomb.timer <= 0) { //detonation is over
-                        bombs.splice(bombs.indexOf(bomb),1); //delete bomb
-                    }
+            if(!bomb.detonated) { //bomb is alive
+                if(bomb.timer <= 0) { //bomb detonates now
+                    bomb.detonated = true;
+                    bomb.timer = BOMB_DETONATION_TIME; //reset timer to detonation time
+                    //bomb.explosion = new Explosion(bomb.x, bomb.y); //calc explosion range
                 }
-            });
-        }
+            } else { //bomb is exploding currently
+                //check if hitting a player
+
+                //TODO: implement Explosion.hits()
+                /*for(let i = 0; i < socket_arr.length; i++) {
+                    if(bomb.explosion.hits(socket_arr[i])) {
+                        //TODO: handling of gameOver on client side
+                        socket_arr[i].emit('gameOver'); //send game over signal to client
+                        socket_arr.splice(i, 1); //delete player
+                    }
+                }*/
+
+                if(bomb.timer <= 0) { //detonation is over
+                    bombs.splice(bombs.indexOf(bomb),1); //delete bomb
+                }
+            }
+        });
 
         // Send gamestate to all players in room
         io.in(roomName).emit('gameUpdate', gameState[roomName]);
-    }, TIMER_INTERVAL)
+    }, TIMER_INTERVAL);
 };
 
 http.listen(3000, () => {

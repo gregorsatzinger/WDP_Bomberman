@@ -86,9 +86,10 @@ function keyEventHandler(e) {
 function renderPlayers(players) {
     ctx.clearRect(0, 0, 400, 400);
     players.forEach(p => {
+        console.log(p.pos);
         ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.rect(p.x, p.y, p.width, p.height);
+        ctx.rect(p.pos.x, p.pos.y, 30, 30);
         ctx.closePath();
         ctx.fill();
     });
@@ -115,7 +116,30 @@ function renderBombs(bombs) {
     });
 }
 
-socket.on('gameUpdate', (players, bombs) => {
-    renderPlayers(players);
-    renderBombs(bombs);
+function startNewGame() {
+    socket.emit('startNewGame');
+    init();
+}
+
+function joinGame() {
+    const code = document.getElementById('gameCodeInput').value;
+    socket.emit('joinGame', code);
+    init();
+}
+
+socket.on('gameCode', (roomCode) => {
+    console.log(roomCode);
+    document.getElementById('gameCodeDisplay').innerText = roomCode;
 });
+
+socket.on('invalidCode', () => {
+    console.log('invalid code');
+    document.getElementById('gameCodeDisplay').innerText = "Invalid game code";
+});
+
+function init() {
+    socket.on('gameUpdate', (state) => {
+        renderPlayers(state.players);
+        renderBombs(state.bombs);
+    });
+}

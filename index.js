@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
+const {makeid} = require('./server/utils');
+const {initalGameState} = require('./server/game');
 
 // https://expressjs.com/en/starter/static-files.html
 app.use(express.static(__dirname + '/public'));
@@ -10,6 +12,7 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/client/index.html');
 });
 
+// Should probably be moved to public folder aswell. Not sure
 app.get('/script.js', (req, res) => {
     res.sendFile(__dirname + '/client/script.js');
 });
@@ -24,94 +27,115 @@ const BOMB_DETONATION_TIME = 1/*s*/ * 1000/TIMER_INTERVAL; //duration of detonat
 const BOMB_DETONATION_WIDTH = GB_SIZE/10*3;
 const MOVING_STEP = 5; //how far does a player move by one timer interval
 
-const socket_arr = []; //array of active players
-const bombs = [];
-let currentPlayers = 0;
+const clientRooms = {}; //Information about all rooms
+const gameState = {}; //Holds current gamestate for every room
 
-function getRandomColor() {
-    let letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-      color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
-}
 
 io.on('connection', (player) => {
-    player.id = ++currentPlayers;
-    //random start position
-    player.x = Math.floor(Math.random()*(GB_SIZE-PLAYER_SIZE));
-    player.y = Math.floor(Math.random()*(GB_SIZE-PLAYER_SIZE));
-    player.color = getRandomColor();
-    player.direction = 4; //moving direction. 0:left, 1:up, 2:right, 3:down, 4:none
-    player.name = "Player " + player.id;
+    player.on('joinGame', handleJoinGame);
+    player.on('startNewGame', handleStartNewGame);
+    player.on('direction', handleDirection);
+    player.on('bomb', handleBomb);
+    player.on('disconnect', handleDisconnect);
 
-    //add to active players
-    socket_arr[player.id] = player;
+    function handleJoinGame(code) {
+        console.log('joined lobby');
+        
+        //TODO: Check if lobby with gameCode = code exists
+        //Join lobby and save roomcode for player in clientRooms
+        clientRooms[player.id] = code;
+        player.join(code);
 
-    player.on('direction', (data) => {
-        player.direction = data.direction;
-    });
+        player.number = 2;
 
-    player.on('bomb', () => {
-        bombs.push({
-            x: player.x + BOMB_MOVE_FACTOR,
-            y: player.y + BOMB_MOVE_FACTOR,
+        gameState[code] = initalGameState();
+
+        //Second player joined -> game can start
+        startGameInterval(code);
+    }
+
+    function handleStartNewGame() {
+        let roomCode = makeid(6);
+        clientRooms[player.id] = roomCode;
+        player.join(roomCode);
+        player.number = 1;
+        player.emit('gameCode', roomCode);
+
+
+        console.log('opened lobby');
+        //Waiting for second player to connect...
+    }
+
+    function handleDirection(data) {
+        //find room of current player
+        const roomName = clientRooms[player.id];
+
+        //update direction of current player
+        gameState[roomName].players[player.number - 1].direction = data.direction;
+    }
+
+    function handleBomb() {
+        //find room of current player
+        const roomName = clientRooms[player.id];
+        const currPlayer = gameState[roomName].players[player.number - 1]
+
+        //add bomb to current gamestate of current room
+        gameState[roomName].bombs.push({
+            x: currPlayer.pos.x + BOMB_MOVE_FACTOR,
+            y: currPlayer.pos.y + BOMB_MOVE_FACTOR,
             radius: BOMB_RADIUS,
             timer: BOMB_TIMER,
             detonated: false
         });
-    });
-
-    player.on('disconnect', () => {
-        socket_arr.splice(player.id,1); //better than delete (?)
-        //delete socket_arr[player.id];
+    }
+    
+    function handleDisconnect() {
+        //TODO: update to room system
+        //socket_arr.splice(player.id,1);
         console.log('a user disconnected');
-    });
-
-    console.log('a user connected');
+    }
 });
 
 function updatePlayerPositions(player) {
     switch(player.direction) {
         case 0:     //left
-            x_ = player.x - MOVING_STEP;
-            y_ = player.y;
+            x_ = player.pos.x - MOVING_STEP;
+            y_ = player.pos.y;
             break;
         case 1:     //up
-            x_ = player.x;
-            y_ = player.y - MOVING_STEP;
+            x_ = player.pos.x;
+            y_ = player.pos.y - MOVING_STEP;
             break;
         case 2:     //right
-            x_ = player.x + MOVING_STEP;
-            y_ = player.y;
+            x_ = player.pos.x + MOVING_STEP;
+            y_ = player.pos.y;
             break;
         case 3:     //down
-            x_ = player.x;
-            y_ = player.y + MOVING_STEP;
+            x_ = player.pos.x;
+            y_ = player.pos.y + MOVING_STEP;
             break;
         default:    //not moving
             return;
     }
 
     //TODO: if(isValidPosition(player, x_, y_)) {
-    player.x = x_;
-    player.y = y_;
+    player.pos.x = x_;
+    player.pos.y = y_;
 }
 
 class Explosion {
     constructor(x, y) {
         //horizontal rect (left-top and right-bottom corners)
-        hor_lt_x = x - DETONATION_WIDTH/2;
+        hor_lt_x = x - BOMB_DETONATION_WIDTH/2;
         hor_lt_y = y - BOMB_RADIUS;
-        hor_rb_x = hor_lt_x + DETONATION_WIDTH;
+        hor_rb_x = hor_lt_x + BOMB_DETONATION_WIDTH;
         hor_rb_y = hor_lt_y + BOMB_RADIUS*2
 
         //vertical rect
         vert_lt_x = x - BOMB_RADIUS;
-        vert_lt_y = y - DETONATION_WIDTH/2;
+        vert_lt_y = y - BOMB_DETONATION_WIDTH/2;
         vert_rb_x = vert_lt_x + BOMB_RADIUS*2;
-        vert_rb_y = vert_lt_y + DETONATION_WIDTH;
+        vert_rb_y = vert_lt_y + BOMB_DETONATION_WIDTH;
     }
     hits(player) {
         //TODO: any point of player touching one of the rectangles?
@@ -120,55 +144,52 @@ class Explosion {
     }
 }
 
-setInterval(() => {
-    /* send game update to all players */
+function startGameInterval(roomName) {
+    const interval = setInterval(() => {
+        /* send game update to all rooms */
 
-    //update players positions
-    const playerPack = [];
-    // Fill pack with information of all players
-    socket_arr.forEach(player => {
-        updatePlayerPositions(player);
-        playerPack.push({ name: player.name, 
-                    x: player.x, 
-                    y: player.y,
-                    color: player.color, 
-                    width: PLAYER_SIZE, //not safed for each player since the
-                    height: PLAYER_SIZE //size is the same for everybody
-        });
-    });
-        
-    for(let i = 0; i < bombs.length; i++) {
-        const bomb = bombs[i];
+        //update gamestate / every rooms
+        for (const key in gameState) {
+            const currRoomState = gameState[key];
+            const player1 = currRoomState.players[0];
+            const player2 = currRoomState.players[1];
+            updatePlayerPositions(player1);
+            updatePlayerPositions(player2);
 
-        bomb.timer--;
+            const bombs = currRoomState.bombs;
+            // TODO: 
+            bombs.forEach(bomb => {
+                bomb.timer--;
 
-        if(!bomb.detonated) { //bomb is alive
-            if(bomb.timer <= 0) { //bomb detonates now
-                bomb.detonated = true;
-                bomb.timer = BOMB_DETONATION_TIME; //reset timer to detonation time
-                bomb.explosion = new Explosion(bomb.x, bomb.y); //calc explosion range
-            }
-        } else { //bomb is exploding currently
-            //check if hitting a player
-
-            //TODO: implement Explosion.hits()
-            /*for(let i = 0; i < socket_arr.length; i++) {
-                if(bomb.explosion.hits(socket_arr[i])) {
-                    //TODO: handling of gameOver on client side
-                    socket_arr[i].emit('gameOver'); //send game over signal to client
-                    socket_arr.splice(i, 1); //delete player
+                if(!bomb.detonated) { //bomb is alive
+                    if(bomb.timer <= 0) { //bomb detonates now
+                        bomb.detonated = true;
+                        bomb.timer = BOMB_DETONATION_TIME; //reset timer to detonation time
+                        bomb.explosion = new Explosion(bomb.x, bomb.y); //calc explosion range
+                    }
+                } else { //bomb is exploding currently
+                    //check if hitting a player
+    
+                    //TODO: implement Explosion.hits()
+                    /*for(let i = 0; i < socket_arr.length; i++) {
+                        if(bomb.explosion.hits(socket_arr[i])) {
+                            //TODO: handling of gameOver on client side
+                            socket_arr[i].emit('gameOver'); //send game over signal to client
+                            socket_arr.splice(i, 1); //delete player
+                        }
+                    }*/
+    
+                    if(bomb.timer <= 0) { //detonation is over
+                        bombs.splice(i,1); //delete bomb
+                    }
                 }
-            }*/
-
-            if(bomb.timer <= 0) { //detonation is over
-                bombs.splice(i,1); //delete bomb
-            }
+            });
         }
-    }
 
-    // Send pack(s) to all players
-    io.emit('gameUpdate', playerPack, bombs);
-}, 20);
+        // Send gamestate to all players in room
+        io.in(roomName).emit('gameUpdate', gameState[roomName]);
+    }, 20)
+};
 
 http.listen(3000, () => {
     console.log('listening on *:3000');

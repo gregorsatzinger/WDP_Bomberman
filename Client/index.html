@@ -14,7 +14,15 @@
         <h1>Bomberman</h1>
     </header>
     <section>
+        <p id="gameCodeDisplay"></p>
+    </section>
+    <section>
         <canvas id="ctx" width="400" height="400" style="background-color: #e7e7e7;"></canvas>
+        <div id="joinPanel">
+            <input type="button" value="New Game" onclick="startNewGame()">
+            <input type ="text" id="gameCodeInput" placeholder="Enter Game Code..."> 
+            <input type="button" value="Join Game" onclick="joinGame()">
+        </div>
     </section>
     <script src="/socket.io/socket.io.js"></script>
     <script defer src="script.js"></script>

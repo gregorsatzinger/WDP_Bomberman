@@ -118,13 +118,11 @@ function renderBombs(bombs) {
 
 function startNewGame() {
     socket.emit('startNewGame');
-    init();
 }
 
 function joinGame() {
     const code = document.getElementById('gameCodeInput').value;
     socket.emit('joinGame', code);
-    init();
 }
 
 socket.on('gameCode', (roomCode) => {
@@ -137,9 +135,8 @@ socket.on('invalidCode', () => {
     document.getElementById('gameCodeDisplay').innerText = "Invalid game code";
 });
 
-function init() {
-    socket.on('gameUpdate', (state) => {
-        renderPlayers(state.players);
-        renderBombs(state.bombs);
-    });
-}
+socket.on('gameUpdate', (state) => {
+    renderPlayers(state.players);
+    renderBombs(state.bombs);
+});
+

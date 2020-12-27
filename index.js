@@ -180,7 +180,7 @@ function startGameInterval(roomName) {
                     }*/
     
                     if(bomb.timer <= 0) { //detonation is over
-                        bombs.splice(i,1); //delete bomb
+                        bombs.splice(bombs.indexOf(bomb),1); //delete bomb
                     }
                 }
             });

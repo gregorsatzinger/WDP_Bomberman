@@ -4,11 +4,12 @@ window.onload = function() {
 }
 
 const GB_SIZE = 400; //gameboard size
+const PLAYER_SIZE = GB_SIZE/10;
 
 //define here AND in server-side index.js?
 //define only on server side and client sends request?
 //need help.
-const DETONATION_WIDTH = GB_SIZE/10*3;
+const BOMB_DETONATION_WIDTH = GB_SIZE/10*3;
 
 let ctx = document.getElementById("ctx").getContext("2d");
 let socket = io();
@@ -68,6 +69,7 @@ function handleMovement(e) {
 }
 
 function handleBombPlacing(e) {
+    //TODO: check if player can place a bomb (cooldown after previous bomb)
     socket.emit('bomb');
 }
 
@@ -86,10 +88,9 @@ function keyEventHandler(e) {
 function renderPlayers(players) {
     ctx.clearRect(0, 0, 400, 400);
     players.forEach(p => {
-        console.log(p.pos);
         ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.rect(p.pos.x, p.pos.y, 30, 30);
+        ctx.rect(p.pos.x, p.pos.y, PLAYER_SIZE, PLAYER_SIZE);
         ctx.closePath();
         ctx.fill();
     });
@@ -107,9 +108,9 @@ function renderBombs(bombs) {
             ctx.fillStyle = "#ffa421";
             ctx.beginPath();
             //horizontal rect
-            ctx.rect(b.x - DETONATION_WIDTH/2, b.y - b.radius, DETONATION_WIDTH, b.radius*2);
+            ctx.rect(b.x - BOMB_DETONATION_WIDTH/2, b.y - b.radius, BOMB_DETONATION_WIDTH, b.radius*2);
             //vertical rect
-            ctx.rect(b.x - b.radius, b.y - DETONATION_WIDTH/2, b.radius*2, DETONATION_WIDTH);
+            ctx.rect(b.x - b.radius, b.y - BOMB_DETONATION_WIDTH/2, b.radius*2, BOMB_DETONATION_WIDTH);
             ctx.closePath();
             ctx.fill();
         }

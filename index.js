@@ -25,7 +25,7 @@ const BOMB_MOVE_FACTOR = PLAYER_SIZE/2; //to place bomb in the middle of the pla
 const BOMB_TIMER = 3/*s*/ * 1000/TIMER_INTERVAL; //time until detonation
 const BOMB_DETONATION_TIME = 1/*s*/ * 1000/TIMER_INTERVAL; //duration of detonation
 const BOMB_DETONATION_WIDTH = GB_SIZE/10*3;
-const MOVING_STEP = 5; //how far does a player move by one timer interval
+const MOVING_STEP = 5; //how far does a player move by one timer interval --> speed
 
 const clientRooms = {}; //Information about all rooms
 const gameState = {}; //Holds current gamestate for every room
@@ -165,7 +165,7 @@ function startGameInterval(roomName) {
                     if(bomb.timer <= 0) { //bomb detonates now
                         bomb.detonated = true;
                         bomb.timer = BOMB_DETONATION_TIME; //reset timer to detonation time
-                        bomb.explosion = new Explosion(bomb.x, bomb.y); //calc explosion range
+                        //bomb.explosion = new Explosion(bomb.x, bomb.y); //calc explosion range
                     }
                 } else { //bomb is exploding currently
                     //check if hitting a player
@@ -188,7 +188,7 @@ function startGameInterval(roomName) {
 
         // Send gamestate to all players in room
         io.in(roomName).emit('gameUpdate', gameState[roomName]);
-    }, 20)
+    }, TIMER_INTERVAL)
 };
 
 http.listen(3000, () => {

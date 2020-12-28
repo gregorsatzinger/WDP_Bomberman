@@ -4,6 +4,10 @@ window.onload = function() {
     document.getElementById("newBtn").onclick = startNewGame;
     document.getElementById("joinBtn").onclick = joinGame;
 
+    //resize canvas
+    document.getElementById("ctx").width = GB_SIZE;
+    document.getElementById("ctx").height = GB_SIZE;
+
 	window.onkeydown = keyEventHandler;
 	window.onkeyup = keyEventHandler;
 }

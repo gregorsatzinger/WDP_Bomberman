@@ -37,29 +37,49 @@ const TIMER_INTERVAL = 20; //[ms]
 const BOMB_MOVE_FACTOR = PLAYER_SIZE/2; //to place bomb in the middle of the player
 const BOMB_TIMER = 3/*s*/ * 1000/TIMER_INTERVAL; //time until detonation
 const BOMB_DETONATION_TIME = 1/*s*/ * 1000/TIMER_INTERVAL; //duration of detonation
-const MOVING_STEP = 5; //how far does a player move by one timer interval --> speed
+const MOVING_STEP = GB_SIZE/80; //how far does a player move by one timer interval --> speed
 
 const clientRooms = {}; //Information about all rooms
-//const gameState = {}; //Holds current gamestate for every room
 
 class Explosion {
     constructor(x, y) {
         //horizontal rect (left-top and right-bottom corners)
-        hor_lt_x = x - BOMB_DETONATION_WIDTH/2;
-        hor_lt_y = y - BOMB_RADIUS;
-        hor_rb_x = hor_lt_x + BOMB_DETONATION_WIDTH;
-        hor_rb_y = hor_lt_y + BOMB_RADIUS*2
+        this.hor_lt_x = x - BOMB_DETONATION_WIDTH/2;
+        this.hor_lt_y = y - BOMB_RADIUS;
+        this.hor_rb_x = this.hor_lt_x + BOMB_DETONATION_WIDTH;
+        this.hor_rb_y = this.hor_lt_y + BOMB_RADIUS*2
 
         //vertical rect
-        vert_lt_x = x - BOMB_RADIUS;
-        vert_lt_y = y - BOMB_DETONATION_WIDTH/2;
-        vert_rb_x = vert_lt_x + BOMB_RADIUS*2;
-        vert_rb_y = vert_lt_y + BOMB_DETONATION_WIDTH;
+        this.vert_lt_x = x - BOMB_RADIUS;
+        this.vert_lt_y = y - BOMB_DETONATION_WIDTH/2;
+        this.vert_rb_x = this.vert_lt_x + BOMB_RADIUS*2;
+        this.vert_rb_y = this.vert_lt_y + BOMB_DETONATION_WIDTH;
     }
     hits(player) {
         //TODO: any point of player touching one of the rectangles?
+        //player:
+        let player_lt_x = player.pos.x;
+        let player_lt_y = player.pos.y;
+        let player_rb_x = this.player_lt_x + PLAYER_SIZE;
+        let player_rb_y = this.player_lt_y + PLAYER_SIZE;
 
-        //return true/false
+        //bottom right corner inside horizontal rect
+        if((this.hor_lt_x  <= player_rb_x && player_rb_x <= this.hor_rb_x &&
+            this.hor_lt_y <= player_rb_y && player_rb_y <= this.hor_rb_y     ) ||  
+            //bottom left corner inside horizontal rect
+            (this.hor_lt_x  <= player_lt_x && player_lt_x <= this.hor_rb_x &&
+                this.hor_lt_y <= player_rb_y && player_rb_y <= this.hor_rb_y     ) ||
+            //top left corner inside horizontal rect
+            (this.hor_lt_x  <= player_lt_x && player_lt_x <= this.hor_rb_x &&
+                this.hor_lt_y <= player_lt_y && player_lt_y <= this.hor_rb_y      ) ||
+            //top right corner inside horizontal rect
+            (this.hor_lt_x  <= player_rb_x && player_rb_x <= this.hor_rb_x &&
+                this.hor_lt_y <= player_lt_y && player_lt_y <= this.hor_rb_y      ) ) {
+                    
+            return true;
+        } else {
+            return false;
+        }
     }
 }
 
@@ -70,11 +90,18 @@ class Room {
         this.gameState = initalGameState();
         this.isRunning = false;
     }
+    //returns player-ID
     addPlayer() {
         let id = this.playerCount;
         this.playerCount++;
         
         return id;
+    }
+    removePlayer() {
+        if(this.playerCount > 0) this.playerCount--;
+    }
+    isEmpty() {
+        return this.playerCount === 0;
     }
     startGame() {
         if(this.playerCount < 2) {
@@ -82,10 +109,13 @@ class Room {
         } else {
             const interval = setInterval(() => {
                 /* send game update to current room */
+
+                let player1 = this.gameState.players[0];
+                let player2 = this.gameState.players[1];
                 
                 //update gamestate of room
-                updatePlayerPositions(this.gameState.players[0]);
-                updatePlayerPositions(this.gameState.players[1]);
+                updatePlayerPositions(player1);
+                updatePlayerPositions(player2);
         
                 const bombs = this.gameState.bombs;
                 // TODO: 
@@ -96,19 +126,13 @@ class Room {
                         if(bomb.timer <= 0) { //bomb detonates now
                             bomb.detonated = true;
                             bomb.timer = BOMB_DETONATION_TIME; //reset timer to detonation time
-                            //bomb.explosion = new Explosion(bomb.x, bomb.y); //calc explosion range
+                            bomb.explosion = new Explosion(bomb.x, bomb.y); //calc explosion range
                         }
                     } else { //bomb is exploding currently
                         //check if hitting a player
-        
-                        //TODO: implement Explosion.hits()
-                        /*for(let i = 0; i < socket_arr.length; i++) {
-                            if(bomb.explosion.hits(socket_arr[i])) {
-                                //TODO: handling of gameOver on client side
-                                socket_arr[i].emit('gameOver'); //send game over signal to client
-                                socket_arr.splice(i, 1); //delete player
-                            }
-                        }*/
+
+                        if(bomb.explosion.hits(player1)) console.log("hit player 1");
+                        if(bomb.explosion.hits(player2)) console.log("hit player 2");
         
                         if(bomb.timer <= 0) { //detonation is over
                             bombs.splice(bombs.indexOf(bomb),1); //delete bomb
@@ -119,7 +143,7 @@ class Room {
                 // Send gamestate to all players in room
                 io.in(this.roomCode).emit('gameUpdate', this.gameState);
 
-                //WHY DOES THE ROOM NOT WORK? :( 
+                
             }, TIMER_INTERVAL);
         }
     }
@@ -130,20 +154,22 @@ class Room {
         }
     }
     placeBomb(id) {
-        let player = this.gameState.players[id];
-        this.gameState.bombs.push({
-            x: player.pos.x + BOMB_MOVE_FACTOR,
-            y: player.pos.y + BOMB_MOVE_FACTOR,
-            radius: BOMB_RADIUS,
-            timer: BOMB_TIMER,
-            detonated: false
-        });
+        //only the first 2 players have the permission to play
+        if(id < 2) {
+            let player = this.gameState.players[id];
+            this.gameState.bombs.push({
+                x: player.pos.x + BOMB_MOVE_FACTOR,
+                y: player.pos.y + BOMB_MOVE_FACTOR,
+                radius: BOMB_RADIUS,
+                timer: BOMB_TIMER,
+                detonated: false
+            });
+        }
     }
 }
 
 io.on('connection', (player) => {
     player.roomCode = -1;
-    //console.log(player.rooms);
 
     player.on('joinGame', handleJoinGame);
     player.on('startNewGame', handleStartNewGame);
@@ -153,9 +179,15 @@ io.on('connection', (player) => {
 
     function handleJoinGame(code) {
         //only join if client has no room yet
-        if(player.roomCode === -1) {
-            //TODO: Check if lobby with gameCode = code exists
-            //Join lobby and save roomcode for player in clientRooms
+        if(player.roomCode !== -1) {
+            //TODO: error message to client
+            console.log("Client can't join 2 different lobbies!");
+        //room does not exist
+        } else if(clientRooms[code] === undefined) {
+            //TODO: error message to client
+            console.log("Room does not exist!");
+        } else {
+            //Join lobby
             player.roomCode = code;
             player.number = clientRooms[code].addPlayer();
             player.join(code);
@@ -172,31 +204,54 @@ io.on('connection', (player) => {
     }
 
     function handleStartNewGame() {
-        let roomCode = makeid(6);
-        clientRooms[roomCode] = new Room(roomCode);
-        player.roomCode = roomCode;
-        player.number = clientRooms[roomCode].addPlayer();
-        player.join(roomCode);
-        console.log("joining code: " + roomCode);
-        player.emit('gameCode', roomCode);
+        //only join if client has no room yet
+        if(player.roomCode !== -1) {
+            //TODO: error message to client
+            console.log("Client can't create more than one lobby!");
+        } else {
+            let roomCode = makeid(6);
+            clientRooms[roomCode] = new Room(roomCode);
+            player.roomCode = roomCode;
+            player.number = clientRooms[roomCode].addPlayer(); //returns ID
+            player.join(roomCode);
+            player.emit('gameCode', roomCode);
 
-        console.log('opened lobby');
-        //Waiting for second player to connect...
+            console.log('opened lobby');
+            //Waiting for second player to connect...
+        }
     }
 
     function handleDirection(data) {
-        //update direction of current player
-        clientRooms[player.roomCode].changeDirection(player.number, data.direction);
+        //Room exists and game has started
+        if( clientRooms[player.roomCode] !== undefined &&
+            clientRooms[player.roomCode].isRunning) {
+            //update direction of current player
+            clientRooms[player.roomCode].changeDirection(player.number, data.direction);
+        }
     }
 
     function handleBomb() {
-        clientRooms[player.roomCode].placeBomb(player.number);
+        //Room exists and game has started
+        if( clientRooms[player.roomCode] !== undefined &&
+            clientRooms[player.roomCode].isRunning) {
+            clientRooms[player.roomCode].placeBomb(player.number);
+        }
     }
     
     function handleDisconnect() {
-        //TODO: update to room system
-        //socket_arr.splice(player.id,1);
-        console.log('a user disconnected');
+        //update to room system
+        
+        if ( clientRooms[player.roomCode] !== undefined ) { //room exists
+            clientRooms[player.roomCode].removePlayer();
+
+            //last player has left --> delete room
+            if(clientRooms[player.roomCode].isEmpty()) {
+                delete clientRooms[player.roomCode];
+                console.log("Room " + player.roomCode + " deleted.");
+                console.log(clientRooms.length + " Rooms left.");
+                player.leave(player.roomCode);
+            }
+        }
     }
 });
 

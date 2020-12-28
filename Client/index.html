@@ -19,14 +19,14 @@
     <section>
         <canvas id="ctx" width="400" height="400" style="background-color: #e7e7e7;"></canvas>
         <div id="joinPanel">
-            <input class="retroBtn" type="button" value="new game" onclick="startNewGame()">
+            <input id="newBtn" class="retroBtn" type="button" value="new game">
             <div id="join">
                 <input class="retroField" type ="text" id="gameCodeInput" maxlength="6" size="6" placeholder="code.."> 
-                <input class="retroBtn" type="button" value="join" onclick="joinGame()">
+                <input id="joinBtn" class="retroBtn" type="button" value="join">
             </div>
         </div>
     </section>
     <script src="/socket.io/socket.io.js"></script>
-    <script defer src="script.js"></script>
+    <script type="module" defer src="script.js"></script>
 </body>
 </html>

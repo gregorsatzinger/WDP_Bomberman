@@ -1,15 +1,16 @@
+import {GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH} from './constants.js';
+
 window.onload = function() {
+    document.getElementById("newBtn").onclick = startNewGame;
+    document.getElementById("joinBtn").onclick = joinGame;
+
 	window.onkeydown = keyEventHandler;
 	window.onkeyup = keyEventHandler;
 }
 
-const GB_SIZE = 400; //gameboard size
+/*const GB_SIZE = 400; //gameboard size
 const PLAYER_SIZE = GB_SIZE/10;
-
-//define here AND in server-side index.js?
-//define only on server side and client sends request?
-//need help.
-const BOMB_DETONATION_WIDTH = GB_SIZE/10*3;
+const BOMB_DETONATION_WIDTH = GB_SIZE/10*3;*/
 
 let ctx = document.getElementById("ctx").getContext("2d");
 let socket = io();
@@ -80,13 +81,14 @@ function keyEventHandler(e) {
             e.code === "ArrowRight" ||
             e.code === "ArrowDown") {
         handleMovement(e);
+    //Player wants to place bomb
     } else if(e.code === "Space" && e.type === "keydown") {
         handleBombPlacing(e);    
     }
 }
 
 function renderPlayers(players) {
-    ctx.clearRect(0, 0, 400, 400);
+    ctx.clearRect(0, 0, GB_SIZE, GB_SIZE);
     players.forEach(p => {
         ctx.fillStyle = p.color;
         ctx.beginPath();
@@ -107,10 +109,16 @@ function renderBombs(bombs) {
         } else { //draw explosion
             ctx.fillStyle = "#ffa421";
             ctx.beginPath();
+
+            //TODO: use bomb.Explosion object for boundaries of rects.
+            // --> calculating only once (on server side)
+            // --> boundaries depend on surrounding obstacles
+
             //horizontal rect
             ctx.rect(b.x - BOMB_DETONATION_WIDTH/2, b.y - b.radius, BOMB_DETONATION_WIDTH, b.radius*2);
             //vertical rect
             ctx.rect(b.x - b.radius, b.y - BOMB_DETONATION_WIDTH/2, b.radius*2, BOMB_DETONATION_WIDTH);
+
             ctx.closePath();
             ctx.fill();
         }

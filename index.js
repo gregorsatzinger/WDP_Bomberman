@@ -1,30 +1,42 @@
-const express = require('express'); 
+import {GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH} from './public/constants.js';
+
+//const express = require('express');
+import express from 'express';
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const {makeid} = require('./server/utils');
-const {initalGameState} = require('./server/game');
+
+//const http = require('http').createServer(app);
+import http from 'http';
+const httpServer = http.createServer(app);
+
+//const io = require('socket.io')(http);
+import {Server} from 'socket.io';
+const io = new Server(httpServer);
+
+//const {makeid} = require('./server/utils');
+import {makeid} from './server/utils.js';
+//const {initalGameState} = require('./server/game');
+import {initalGameState} from './server/game.js';
 
 // https://expressjs.com/en/starter/static-files.html
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(process.cwd() + '/public'));
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/client/index.html');
+    res.sendFile(process.cwd() + '/client/index.html');
 });
 
 // Should probably be moved to public folder aswell. Not sure
 app.get('/script.js', (req, res) => {
-    res.sendFile(__dirname + '/client/script.js');
+    res.sendFile(process.cwd() + '/client/script.js');
+});
+
+app.get('/constants.js', (req, res) => {
+    res.sendFile(process.cwd() + '/public/constants.js');
 });
 
 const TIMER_INTERVAL = 20; //[ms]
-const GB_SIZE = 400; //gameboard size
-const PLAYER_SIZE = GB_SIZE/10;
-const BOMB_RADIUS = PLAYER_SIZE/3;
 const BOMB_MOVE_FACTOR = PLAYER_SIZE/2; //to place bomb in the middle of the player
 const BOMB_TIMER = 3/*s*/ * 1000/TIMER_INTERVAL; //time until detonation
 const BOMB_DETONATION_TIME = 1/*s*/ * 1000/TIMER_INTERVAL; //duration of detonation
-const BOMB_DETONATION_WIDTH = GB_SIZE/10*3;
 const MOVING_STEP = 5; //how far does a player move by one timer interval --> speed
 
 const clientRooms = {}; //Information about all rooms
@@ -188,6 +200,6 @@ function startGameInterval(roomName) {
     }, TIMER_INTERVAL);
 };
 
-http.listen(3000, () => {
+httpServer.listen(3000, () => {
     console.log('listening on *:3000');
 });

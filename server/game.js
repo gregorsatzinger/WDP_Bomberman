@@ -1,11 +1,11 @@
-const { getRandomColor } = require('./utils');
+//const { getRandomColor } = require('./utils');
+import {getRandomColor} from './utils.js';
 
-
-module.exports = {
+/*module.exports = {
     initalGameState
-}
+}*/
 
-function initalGameState() {
+export function initalGameState() {
     return {
         players: [
         {

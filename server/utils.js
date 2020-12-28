@@ -1,9 +1,9 @@
-module.exports = {
+/*module.exports = {
     makeid,
     getRandomColor
-}
+}*/
 
-function makeid(length) {
+export function makeid(length) {
     let result = '';
     let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let charactersLength = characters.length;
@@ -13,7 +13,7 @@ function makeid(length) {
     return result;
  }
 
-function getRandomColor() {
+export function getRandomColor() {
     let letters = '0123456789ABCDEF';
     let color = '#';
     for (let i = 0; i < 6; i++) {

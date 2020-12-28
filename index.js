@@ -68,6 +68,7 @@ class Room {
         this.roomCode = roomCode;
         this.playerCount = 0;
         this.gameState = initalGameState();
+        this.isRunning = false;
     }
     addPlayer() {
         let id = this.playerCount;
@@ -116,7 +117,8 @@ class Room {
                 });
 
                 // Send gamestate to all players in room
-                io./*in(this.roomCode).*/emit('gameUpdate', this.gameState);
+                io.in(this.roomCode).emit('gameUpdate', this.gameState);
+
                 //WHY DOES THE ROOM NOT WORK? :( 
             }, TIMER_INTERVAL);
         }
@@ -141,6 +143,7 @@ class Room {
 
 io.on('connection', (player) => {
     player.roomCode = -1;
+    //console.log(player.rooms);
 
     player.on('joinGame', handleJoinGame);
     player.on('startNewGame', handleStartNewGame);
@@ -154,13 +157,17 @@ io.on('connection', (player) => {
             //TODO: Check if lobby with gameCode = code exists
             //Join lobby and save roomcode for player in clientRooms
             player.roomCode = code;
-            player.id = clientRooms[code].addPlayer();
+            player.number = clientRooms[code].addPlayer();
             player.join(code);
             console.log('joined lobby');
 
             //Second player joined -> game can start
+            //Spectators shouldnt start game again
             //TODO: add "start"-Button for creator of lobby
-            clientRooms[code].startGame();
+            if(!clientRooms[code].isRunning) {
+                clientRooms[code].startGame();
+                clientRooms[code].isRunning = true;
+            }
         }
     }
 
@@ -168,7 +175,7 @@ io.on('connection', (player) => {
         let roomCode = makeid(6);
         clientRooms[roomCode] = new Room(roomCode);
         player.roomCode = roomCode;
-        player.id = clientRooms[roomCode].addPlayer();
+        player.number = clientRooms[roomCode].addPlayer();
         player.join(roomCode);
         console.log("joining code: " + roomCode);
         player.emit('gameCode', roomCode);
@@ -179,11 +186,11 @@ io.on('connection', (player) => {
 
     function handleDirection(data) {
         //update direction of current player
-        clientRooms[player.roomCode].changeDirection(player.id, data.direction);
+        clientRooms[player.roomCode].changeDirection(player.number, data.direction);
     }
 
     function handleBomb() {
-        clientRooms[player.roomCode].placeBomb(player.id);
+        clientRooms[player.roomCode].placeBomb(player.number);
     }
     
     function handleDisconnect() {

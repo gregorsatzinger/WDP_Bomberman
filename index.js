@@ -40,73 +40,7 @@ const BOMB_DETONATION_TIME = 1/*s*/ * 1000/TIMER_INTERVAL; //duration of detonat
 const MOVING_STEP = 5; //how far does a player move by one timer interval --> speed
 
 const clientRooms = {}; //Information about all rooms
-const gameState = {}; //Holds current gamestate for every room
-
-
-io.on('connection', (player) => {
-    player.on('joinGame', handleJoinGame);
-    player.on('startNewGame', handleStartNewGame);
-    player.on('direction', handleDirection);
-    player.on('bomb', handleBomb);
-    player.on('disconnect', handleDisconnect);
-
-    function handleJoinGame(code) {
-        console.log('joined lobby');
-        
-        //TODO: Check if lobby with gameCode = code exists
-        //Join lobby and save roomcode for player in clientRooms
-        clientRooms[player.id] = code;
-        player.join(code);
-
-        player.number = 2;
-
-        gameState[code] = initalGameState();
-
-        //Second player joined -> game can start
-        startGameInterval(code);
-    }
-
-    function handleStartNewGame() {
-        let roomCode = makeid(6);
-        clientRooms[player.id] = roomCode;
-        player.join(roomCode);
-        player.number = 1;
-        player.emit('gameCode', roomCode);
-
-
-        console.log('opened lobby');
-        //Waiting for second player to connect...
-    }
-
-    function handleDirection(data) {
-        //find room of current player
-        const roomName = clientRooms[player.id];
-
-        //update direction of current player
-        gameState[roomName].players[player.number - 1].direction = data.direction;
-    }
-
-    function handleBomb() {
-        //find room of current player
-        const roomName = clientRooms[player.id];
-        const currPlayer = gameState[roomName].players[player.number - 1]
-
-        //add bomb to current gamestate of current room
-        gameState[roomName].bombs.push({
-            x: currPlayer.pos.x + BOMB_MOVE_FACTOR,
-            y: currPlayer.pos.y + BOMB_MOVE_FACTOR,
-            radius: BOMB_RADIUS,
-            timer: BOMB_TIMER,
-            detonated: false
-        });
-    }
-    
-    function handleDisconnect() {
-        //TODO: update to room system
-        //socket_arr.splice(player.id,1);
-        console.log('a user disconnected');
-    }
-});
+//const gameState = {}; //Holds current gamestate for every room
 
 class Explosion {
     constructor(x, y) {
@@ -129,8 +63,139 @@ class Explosion {
     }
 }
 
-function updatePlayerPositions(player) {
+class Room {
+    constructor(roomCode) {
+        this.roomCode = roomCode;
+        this.playerCount = 0;
+        this.gameState = initalGameState();
+    }
+    addPlayer() {
+        let id = this.playerCount;
+        this.playerCount++;
+        
+        return id;
+    }
+    startGame() {
+        if(this.playerCount < 2) {
+            //TODO: error message "can't start game with less than 2 players"
+        } else {
+            const interval = setInterval(() => {
+                /* send game update to current room */
+                
+                //update gamestate of room
+                updatePlayerPositions(this.gameState.players[0]);
+                updatePlayerPositions(this.gameState.players[1]);
+        
+                const bombs = this.gameState.bombs;
+                // TODO: 
+                bombs.forEach(bomb => {
+                    bomb.timer--;
+        
+                    if(!bomb.detonated) { //bomb is alive
+                        if(bomb.timer <= 0) { //bomb detonates now
+                            bomb.detonated = true;
+                            bomb.timer = BOMB_DETONATION_TIME; //reset timer to detonation time
+                            //bomb.explosion = new Explosion(bomb.x, bomb.y); //calc explosion range
+                        }
+                    } else { //bomb is exploding currently
+                        //check if hitting a player
+        
+                        //TODO: implement Explosion.hits()
+                        /*for(let i = 0; i < socket_arr.length; i++) {
+                            if(bomb.explosion.hits(socket_arr[i])) {
+                                //TODO: handling of gameOver on client side
+                                socket_arr[i].emit('gameOver'); //send game over signal to client
+                                socket_arr.splice(i, 1); //delete player
+                            }
+                        }*/
+        
+                        if(bomb.timer <= 0) { //detonation is over
+                            bombs.splice(bombs.indexOf(bomb),1); //delete bomb
+                        }
+                    }
+                });
+
+                // Send gamestate to all players in room
+                io./*in(this.roomCode).*/emit('gameUpdate', this.gameState);
+                //WHY DOES THE ROOM NOT WORK? :( 
+            }, TIMER_INTERVAL);
+        }
+    }
+    changeDirection(id, direction) {
+        //only the first 2 players have the permission to play
+        if(id < 2) {
+            this.gameState.players[id].direction = direction;
+        }
+    }
+    placeBomb(id) {
+        let player = this.gameState.players[id];
+        this.gameState.bombs.push({
+            x: player.pos.x + BOMB_MOVE_FACTOR,
+            y: player.pos.y + BOMB_MOVE_FACTOR,
+            radius: BOMB_RADIUS,
+            timer: BOMB_TIMER,
+            detonated: false
+        });
+    }
+}
+
+io.on('connection', (player) => {
+    player.roomCode = -1;
+
+    player.on('joinGame', handleJoinGame);
+    player.on('startNewGame', handleStartNewGame);
+    player.on('direction', handleDirection);
+    player.on('bomb', handleBomb);
+    player.on('disconnect', handleDisconnect);
+
+    function handleJoinGame(code) {
+        //only join if client has no room yet
+        if(player.roomCode === -1) {
+            //TODO: Check if lobby with gameCode = code exists
+            //Join lobby and save roomcode for player in clientRooms
+            player.roomCode = code;
+            player.id = clientRooms[code].addPlayer();
+            player.join(code);
+            console.log('joined lobby');
+
+            //Second player joined -> game can start
+            //TODO: add "start"-Button for creator of lobby
+            clientRooms[code].startGame();
+        }
+    }
+
+    function handleStartNewGame() {
+        let roomCode = makeid(6);
+        clientRooms[roomCode] = new Room(roomCode);
+        player.roomCode = roomCode;
+        player.id = clientRooms[roomCode].addPlayer();
+        player.join(roomCode);
+        console.log("joining code: " + roomCode);
+        player.emit('gameCode', roomCode);
+
+        console.log('opened lobby');
+        //Waiting for second player to connect...
+    }
+
+    function handleDirection(data) {
+        //update direction of current player
+        clientRooms[player.roomCode].changeDirection(player.id, data.direction);
+    }
+
+    function handleBomb() {
+        clientRooms[player.roomCode].placeBomb(player.id);
+    }
     
+    function handleDisconnect() {
+        //TODO: update to room system
+        //socket_arr.splice(player.id,1);
+        console.log('a user disconnected');
+    }
+});
+
+function updatePlayerPositions(player) {
+    let x_, y_;
+
     switch(player.direction) {
         case 0:     //left
             x_ = player.pos.x - MOVING_STEP;
@@ -156,49 +221,6 @@ function updatePlayerPositions(player) {
     player.pos.x = x_;
     player.pos.y = y_;
 }
-
-function startGameInterval(roomName) {
-    const interval = setInterval(() => {
-        /* send game update to current room */
-
-        //update gamestate of room
-        const currRoomState = gameState[roomName];
-        updatePlayerPositions(currRoomState.players[0]);
-        updatePlayerPositions(currRoomState.players[1]);
-
-        const bombs = currRoomState.bombs;
-        // TODO: 
-        bombs.forEach(bomb => {
-            bomb.timer--;
-
-            if(!bomb.detonated) { //bomb is alive
-                if(bomb.timer <= 0) { //bomb detonates now
-                    bomb.detonated = true;
-                    bomb.timer = BOMB_DETONATION_TIME; //reset timer to detonation time
-                    //bomb.explosion = new Explosion(bomb.x, bomb.y); //calc explosion range
-                }
-            } else { //bomb is exploding currently
-                //check if hitting a player
-
-                //TODO: implement Explosion.hits()
-                /*for(let i = 0; i < socket_arr.length; i++) {
-                    if(bomb.explosion.hits(socket_arr[i])) {
-                        //TODO: handling of gameOver on client side
-                        socket_arr[i].emit('gameOver'); //send game over signal to client
-                        socket_arr.splice(i, 1); //delete player
-                    }
-                }*/
-
-                if(bomb.timer <= 0) { //detonation is over
-                    bombs.splice(bombs.indexOf(bomb),1); //delete bomb
-                }
-            }
-        });
-
-        // Send gamestate to all players in room
-        io.in(roomName).emit('gameUpdate', gameState[roomName]);
-    }, TIMER_INTERVAL);
-};
 
 httpServer.listen(3000, () => {
     console.log('listening on *:3000');

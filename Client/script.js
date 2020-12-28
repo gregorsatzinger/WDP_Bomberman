@@ -1,7 +1,7 @@
 import {GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH} from '/constants.js';
 
 window.onload = function() {
-    document.getElementById("newBtn").onclick = startNewGame;
+    document.getElementById("newBtn").onclick = createGame;
     document.getElementById("joinBtn").onclick = joinGame;
 
     //resize canvas
@@ -129,8 +129,8 @@ function renderBombs(bombs) {
     });
 }
 
-function startNewGame() {
-    socket.emit('startNewGame');
+function createGame() {
+    socket.emit('createGame');
 }
 
 function joinGame() {
@@ -140,16 +140,45 @@ function joinGame() {
 
 socket.on('gameCode', (roomCode) => {
     console.log(roomCode);
-    document.getElementById('gameCodeDisplay').innerText = roomCode;
+    document.getElementById('gameCodeDisplay').innerText = "Game code: " + roomCode;
 });
 
-socket.on('invalidCode', () => {
-    console.log('invalid code');
-    document.getElementById('gameCodeDisplay').innerText = "Invalid game code";
+socket.on('lobbyFull', () => {
+    let startBtn = document.createElement('button');
+    startBtn.className = "retroBtn";
+    startBtn.textContent = "start";
+    startBtn.style.setProperty('margin-left', '2rem');
+    startBtn.onclick = () => {
+        socket.emit('startGame');
+        startBtn.remove();
+    };
+    document.getElementById('topPanel').appendChild(startBtn);
 });
+
 
 socket.on('gameUpdate', (state) => {
     renderPlayers(state.players);
     renderBombs(state.bombs);
+    
+    //hacky solution for now. Messaging system probably gets changed later anyway
+    let infoText = document.getElementById('bottomPanel').innerText;
+    if(infoText !== "Spectating the game...") {
+        document.getElementById('bottomPanel').innerText = "";
+    }
 });
 
+socket.on('log', (data) => {
+    switch(data.type) {
+        case "success": 
+            document.getElementById("ctx").style.setProperty('display', 'block');
+            document.getElementById("joinPanel").style.setProperty('display', 'none');
+            break; 
+        case "error":
+            document.getElementById('gameCodeDisplay').innerText = data.message;
+            break;
+        case "info":
+            document.getElementById('bottomPanel').innerText = data.message;
+            break;
+        default: break;
+    }
+});

@@ -117,6 +117,7 @@ export class Room {
         this.playerCount = 0;
         this.gameState = initalGameState();
         this.isRunning = false;
+        this.isReady = false;
     }
     //returns player-ID
     addPlayer() {

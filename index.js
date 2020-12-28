@@ -36,7 +36,8 @@ io.on('connection', (player) => {
     player.roomCode = -1;
 
     player.on('joinGame', handleJoinGame);
-    player.on('startNewGame', handleStartNewGame);
+    player.on('createGame', handleCreateGame);
+    player.on('startGame', handleStartGame);
     player.on('direction', handleDirection);
     player.on('bomb', handleBomb);
     player.on('disconnect', handleDisconnect);
@@ -45,10 +46,13 @@ io.on('connection', (player) => {
         //only join if client has no room yet
         if(player.roomCode !== -1) {
             //TODO: error message to client
+            player.emit('log', {"type": "error" ,"message": "Already joined another lobby."})
+
             console.log("Client can't join 2 different lobbies!");
         //room does not exist
         } else if(clientRooms[code] === undefined) {
             //TODO: error message to client
+            player.emit('log', {"type": "error" ,"message": "Invalid game code entered."})
             console.log("Room does not exist!");
         } else {
             //Join lobby
@@ -56,32 +60,46 @@ io.on('connection', (player) => {
             player.number = clientRooms[code].addPlayer();
             player.join(code);
             console.log('joined lobby');
+            player.emit('log', {"type": "success" ,"message": "Joined lobby successfully."})
 
-            //Second player joined -> game can start
+            //Second player joined -> owner can start game
             //Spectators shouldnt start game again
-            //TODO: add "start"-Button for creator of lobby
-            if(!clientRooms[code].isRunning) {
-                startGameLoop(clientRooms[code]);
-                clientRooms[code].isRunning = true;
+            if(!clientRooms[code].isReady && !clientRooms[code].isRunning) {
+                player.emit('log', {"type": "info" ,"message": "Waiting for lobby owner to start the game..."})
+                clientRooms[code].owner.emit('lobbyFull');
+                clientRooms[code].isReady = true;
+            } else {
+                player.emit('log', {"type": "info" ,"message": "Spectating the game..."})
             }
         }
     }
 
-    function handleStartNewGame() {
+    function handleCreateGame() {
         //only join if client has no room yet
         if(player.roomCode !== -1) {
-            //TODO: error message to client
+            player.emit('log', {"type": "error" ,"message": "Can't create more than one lobby."})
             console.log("Client can't create more than one lobby!");
         } else {
             let roomCode = makeid(6);
             clientRooms[roomCode] = new Room(roomCode);
             player.roomCode = roomCode;
             player.number = clientRooms[roomCode].addPlayer(); //returns ID
+            clientRooms[roomCode].owner = player;
             player.join(roomCode);
             player.emit('gameCode', roomCode);
 
             console.log('opened lobby');
+            player.emit('log', {"type": "success" ,"message": "Created lobby successfully."})
+
             //Waiting for second player to connect...
+        }
+    }
+
+    function handleStartGame() {
+        let room = clientRooms[player.roomCode];
+        if(!room.isRunning) {
+            startGameLoop(room);
+            room.isRunning = true;
         }
     }
 

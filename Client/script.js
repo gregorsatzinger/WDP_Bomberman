@@ -1,4 +1,4 @@
-import {GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH} from './constants.js';
+import {GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH} from '/constants.js';
 
 window.onload = function() {
     document.getElementById("newBtn").onclick = startNewGame;

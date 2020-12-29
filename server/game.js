@@ -1,10 +1,5 @@
-//const { getRandomColor } = require('./utils');
 import { GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH } from '../public/constants.js';
 import { getRandomColor } from './utils.js';
-
-/*module.exports = {
-    initalGameState
-}*/
 
 const TIMER_INTERVAL = 20; //[ms]
 const BOMB_MOVE_FACTOR = PLAYER_SIZE/2; //to place bomb in the middle of the player
@@ -18,8 +13,8 @@ export function initalGameState() {
         {
             pos: {
                 //top left corner
-                x: GB_SIZE/40,
-                y: GB_SIZE/40,
+                x: 0,
+                y: 0,
             },
             color: getRandomColor(),
             direction: 4,
@@ -28,8 +23,8 @@ export function initalGameState() {
         {
             pos: {
                 //bottom right corner
-                x: GB_SIZE - GB_SIZE/40 - PLAYER_SIZE,
-                y: GB_SIZE - GB_SIZE/40 - PLAYER_SIZE,
+                x: GB_SIZE - PLAYER_SIZE,
+                y: GB_SIZE - PLAYER_SIZE,
             },
             color: getRandomColor(),
             direction: 4,
@@ -100,20 +95,6 @@ export class Explosion {
             rb_x: rb_x,
             rb_y: rb_y
         });
-
-        console.log(this.rects);
-
-        //horizontal rect (left-top and right-bottom corners)
-        /*this.hor_lt_x = x - BOMB_DETONATION_WIDTH/2;
-        this.hor_lt_y = y - BOMB_RADIUS;
-        this.hor_rb_x = this.hor_lt_x + BOMB_DETONATION_WIDTH;
-        this.hor_rb_y = this.hor_lt_y + BOMB_RADIUS*2*/
-
-        //vertical rect
-        /*this.vert_lt_x = x - BOMB_RADIUS;
-        this.vert_lt_y = y - BOMB_DETONATION_WIDTH/2;
-        this.vert_rb_x = this.vert_lt_x + BOMB_RADIUS*2;
-        this.vert_rb_y = this.vert_lt_y + BOMB_DETONATION_WIDTH;*/
     }
     hits(player) {
         //TODO: any point of player touching one of the rectangles?
@@ -150,7 +131,7 @@ export class Explosion {
                       (player_lt_y < rect.lt_y && rect.rb_y < player_rb_y) && //rect between players corners
                       (rect.lt_x <= player_rb_x && rect.rb_x >= player_lt_x)) {
                 hit = true;
-                
+
                       //for vertical rect
             } else if(i===1 &&
                       (player_lt_x < rect.lt_x && rect.rb_x < player_rb_x) && //rect between players corners
@@ -194,7 +175,7 @@ export class Room {
         updatePlayerPositions(player2);
 
         const bombs = this.gameState.bombs;
-        // TODO: 
+        
         bombs.forEach(bomb => {
             bomb.timer--;
 
@@ -206,7 +187,6 @@ export class Room {
                 }
             } else { //bomb is exploding currently
                 //check if hitting a player
-
                 if(bomb.explosion.hits(player1)) console.log("hit player 1");
                 if(bomb.explosion.hits(player2)) console.log("hit player 2");
 
@@ -230,7 +210,7 @@ export class Room {
             this.gameState.bombs.push({
                 x: player.pos.x + BOMB_MOVE_FACTOR,
                 y: player.pos.y + BOMB_MOVE_FACTOR,
-                radius: BOMB_RADIUS,
+                radius: BOMB_RADIUS, //TODO: export constant to client
                 timer: BOMB_TIMER,
                 detonated: false
             });

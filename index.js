@@ -1,16 +1,12 @@
-//const express = require('express');
 import express from 'express';
 const app = express();
 
-//const http = require('http').createServer(app);
 import http from 'http';
 const httpServer = http.createServer(app);
 
-//const io = require('socket.io')(http);
 import {Server} from 'socket.io';
 const io = new Server(httpServer);
 
-//const {makeid} = require('./server/utils');
 import {makeid} from './server/utils.js';
 
 import {Explosion, Room} from './server/game.js'

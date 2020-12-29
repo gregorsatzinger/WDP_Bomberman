@@ -1,4 +1,4 @@
-import {GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH} from '/constants.js';
+import {GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH, FIXED_OBSTACLES} from '/constants.js';
 
 window.onload = function() {
     document.getElementById("newBtn").onclick = createGame;
@@ -129,6 +129,16 @@ function renderBombs(bombs) {
     });
 }
 
+function renderObstacles(obstacles) {
+    obstacles.forEach(o => {
+        ctx.fillStyle = "#A8A8A8";
+        ctx.beginPath();
+        ctx.rect(o.x, o.y, o.size, o.size);
+        ctx.closePath();
+        ctx.fill();
+    })
+}
+
 function createGame() {
     socket.emit('createGame');
 }
@@ -159,6 +169,8 @@ socket.on('lobbyFull', () => {
 socket.on('gameUpdate', (state) => {
     renderPlayers(state.players);
     renderBombs(state.bombs);
+    renderObstacles(FIXED_OBSTACLES);
+    //TODO: renderObstacles(state.var_obstacles);
     
     //hacky solution for now. Messaging system probably gets changed later anyway
     let infoText = document.getElementById('bottomPanel').innerText;

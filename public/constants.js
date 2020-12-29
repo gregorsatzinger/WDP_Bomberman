@@ -1,7 +1,7 @@
 //Constants used by both client and server
 export const GB_SIZE = 400; //gameboard size
 const GB_FIELDS = 11; //fields within GB_SIZE
-const FIELD_SIZE = GB_SIZE / GB_FIELDS; //size of one field
+export const FIELD_SIZE = GB_SIZE / GB_FIELDS; //size of one field
 export const PLAYER_SIZE = GB_SIZE/13;
 export const BOMB_RADIUS = PLAYER_SIZE/3;
 

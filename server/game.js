@@ -1,4 +1,4 @@
-import { GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH } from '../public/constants.js';
+import { GB_SIZE, FIELD_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH } from '../public/constants.js';
 import { getRandomColor } from './utils.js';
 
 const TIMER_INTERVAL = 20; //[ms]
@@ -13,8 +13,8 @@ export function initalGameState() {
         {
             pos: {
                 //top left corner
-                x: 0,
-                y: 0,
+                x: (FIELD_SIZE - PLAYER_SIZE) / 2,
+                y: (FIELD_SIZE - PLAYER_SIZE) / 2,
             },
             color: getRandomColor(),
             direction: 4,
@@ -23,8 +23,8 @@ export function initalGameState() {
         {
             pos: {
                 //bottom right corner
-                x: GB_SIZE - PLAYER_SIZE,
-                y: GB_SIZE - PLAYER_SIZE,
+                x: GB_SIZE - PLAYER_SIZE - (FIELD_SIZE - PLAYER_SIZE) / 2,
+                y: GB_SIZE - PLAYER_SIZE - (FIELD_SIZE - PLAYER_SIZE) / 2,
             },
             color: getRandomColor(),
             direction: 4,
@@ -33,35 +33,6 @@ export function initalGameState() {
         ],
         bombs: [],
     };
-}
-
-function updatePlayerPositions(player) {
-    let x_, y_;
-
-    switch(player.direction) {
-        case 0:     //left
-            x_ = player.pos.x - MOVING_STEP;
-            y_ = player.pos.y;
-            break;
-        case 1:     //up
-            x_ = player.pos.x;
-            y_ = player.pos.y - MOVING_STEP;
-            break;
-        case 2:     //right
-            x_ = player.pos.x + MOVING_STEP;
-            y_ = player.pos.y;
-            break;
-        case 3:     //down
-            x_ = player.pos.x;
-            y_ = player.pos.y + MOVING_STEP;
-            break;
-        default:    //not moving
-            return;
-    }
-
-    //TODO: if(isValidPosition(player, x_, y_)) {
-    player.pos.x = x_;
-    player.pos.y = y_;
 }
 
 export class Explosion {
@@ -160,19 +131,55 @@ export class Room {
         
         return id;
     }
+    isValidPosition(x, y) {
+        if(x < 0 || y < 0 || x > GB_SIZE - PLAYER_SIZE  || y > GB_SIZE - PLAYER_SIZE) {
+            return false;
+        }
+        return true;
+    }
+    updatePlayerPosition(player) {
+        let x_, y_;
+
+        switch(player.direction) {
+            case 0:     //left
+                x_ = player.pos.x - MOVING_STEP;
+                y_ = player.pos.y;
+                break;
+            case 1:     //up
+                x_ = player.pos.x;
+                y_ = player.pos.y - MOVING_STEP;
+                break;
+            case 2:     //right
+                x_ = player.pos.x + MOVING_STEP;
+                y_ = player.pos.y;
+                break;
+            case 3:     //down
+                x_ = player.pos.x;
+                y_ = player.pos.y + MOVING_STEP;
+                break;
+            default:    //not moving
+                return;
+        }
+        if(this.isValidPosition(x_, y_)) {
+            player.pos.x = x_;
+            player.pos.y = y_;
+        }
+        
+    }
     removePlayer() {
         if(this.playerCount > 0) this.playerCount--;
     }
     isEmpty() {
         return this.playerCount === 0;
     }
+
     update() {
         let player1 = this.gameState.players[0];
         let player2 = this.gameState.players[1];
         
         //update gamestate of room
-        updatePlayerPositions(player1);
-        updatePlayerPositions(player2);
+        this.updatePlayerPosition(player1);
+        this.updatePlayerPosition(player2);
 
         const bombs = this.gameState.bombs;
         

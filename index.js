@@ -1,5 +1,3 @@
-import {GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH} from './public/constants.js';
-
 //const express = require('express');
 import express from 'express';
 const app = express();

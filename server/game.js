@@ -1,5 +1,5 @@
 //const { getRandomColor } = require('./utils');
-import { GB_SIZE, PLAYER_SIZE } from '../public/constants.js';
+import { GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH } from '../public/constants.js';
 import { getRandomColor } from './utils.js';
 
 /*module.exports = {
@@ -71,43 +71,96 @@ function updatePlayerPositions(player) {
 
 export class Explosion {
     constructor(x, y) {
+        this.rects = [];
+
         //horizontal rect (left-top and right-bottom corners)
-        this.hor_lt_x = x - BOMB_DETONATION_WIDTH/2;
-        this.hor_lt_y = y - BOMB_RADIUS;
-        this.hor_rb_x = this.hor_lt_x + BOMB_DETONATION_WIDTH;
-        this.hor_rb_y = this.hor_lt_y + BOMB_RADIUS*2
+
+        let lt_x = x - BOMB_DETONATION_WIDTH/2;
+        let lt_y = y - BOMB_RADIUS;
+        let rb_x = lt_x + BOMB_DETONATION_WIDTH;
+        let rb_y = lt_y + BOMB_RADIUS*2;
+
+        this.rects.push({
+            lt_x: lt_x,
+            lt_y: lt_y,
+            rb_x: rb_x,
+            rb_y: rb_y
+        });
 
         //vertical rect
-        this.vert_lt_x = x - BOMB_RADIUS;
+
+        lt_x = x - BOMB_RADIUS;
+        lt_y = y - BOMB_DETONATION_WIDTH/2;
+        rb_x = lt_x + BOMB_RADIUS*2;
+        rb_y = lt_y + BOMB_DETONATION_WIDTH;
+
+        this.rects.push({
+            lt_x: lt_x,
+            lt_y: lt_y,
+            rb_x: rb_x,
+            rb_y: rb_y
+        });
+
+        console.log(this.rects);
+
+        //horizontal rect (left-top and right-bottom corners)
+        /*this.hor_lt_x = x - BOMB_DETONATION_WIDTH/2;
+        this.hor_lt_y = y - BOMB_RADIUS;
+        this.hor_rb_x = this.hor_lt_x + BOMB_DETONATION_WIDTH;
+        this.hor_rb_y = this.hor_lt_y + BOMB_RADIUS*2*/
+
+        //vertical rect
+        /*this.vert_lt_x = x - BOMB_RADIUS;
         this.vert_lt_y = y - BOMB_DETONATION_WIDTH/2;
         this.vert_rb_x = this.vert_lt_x + BOMB_RADIUS*2;
-        this.vert_rb_y = this.vert_lt_y + BOMB_DETONATION_WIDTH;
+        this.vert_rb_y = this.vert_lt_y + BOMB_DETONATION_WIDTH;*/
     }
     hits(player) {
         //TODO: any point of player touching one of the rectangles?
         //player:
         let player_lt_x = player.pos.x;
         let player_lt_y = player.pos.y;
-        let player_rb_x = this.player_lt_x + PLAYER_SIZE;
-        let player_rb_y = this.player_lt_y + PLAYER_SIZE;
+        let player_rb_x = player_lt_x + PLAYER_SIZE;
+        let player_rb_y = player_lt_y + PLAYER_SIZE;
 
-        //bottom right corner inside horizontal rect
-        if((this.hor_lt_x  <= player_rb_x && player_rb_x <= this.hor_rb_x &&
-            this.hor_lt_y <= player_rb_y && player_rb_y <= this.hor_rb_y     ) ||  
-            //bottom left corner inside horizontal rect
-            (this.hor_lt_x  <= player_lt_x && player_lt_x <= this.hor_rb_x &&
-                this.hor_lt_y <= player_rb_y && player_rb_y <= this.hor_rb_y     ) ||
-            //top left corner inside horizontal rect
-            (this.hor_lt_x  <= player_lt_x && player_lt_x <= this.hor_rb_x &&
-                this.hor_lt_y <= player_lt_y && player_lt_y <= this.hor_rb_y      ) ||
-            //top right corner inside horizontal rect
-            (this.hor_lt_x  <= player_rb_x && player_rb_x <= this.hor_rb_x &&
-                this.hor_lt_y <= player_lt_y && player_lt_y <= this.hor_rb_y      ) ) {
-                    
-            return true;
-        } else {
-            return false;
+        let hit = false;
+        let i = 0;
+
+        //check collision for horizontal and vertical rect
+        while(i < 2 && !hit) {
+            let rect = this.rects[i];
+            //bottom right corner inside rect?
+            if((rect.lt_x  <= player_rb_x && player_rb_x <= rect.rb_x &&
+                rect.lt_y <= player_rb_y && player_rb_y <= rect.rb_y      ) ||  
+                //bottom left corner inside rect?
+                (rect.lt_x  <= player_lt_x && player_lt_x <= rect.rb_x &&
+                rect.lt_y <= player_rb_y && player_rb_y <= rect.rb_y      ) ||
+                //top left corner inside rect?
+                (rect.lt_x  <= player_lt_x && player_lt_x <= rect.rb_x &&
+                    rect.lt_y <= player_lt_y && player_lt_y <= rect.rb_y  ) ||
+                //top right corner inside rect?
+                (rect.lt_x  <= player_rb_x && player_rb_x <= rect.rb_x &&
+                    rect.lt_y <= player_lt_y && player_lt_y <= rect.rb_y  )) {
+                
+                hit = true;
+
+            //special case where player is inside rectangle without touching it with its corners
+                      //for horizontal rect
+            } else if(i===0 &&
+                      (player_lt_y < rect.lt_y && rect.rb_y < player_rb_y) && //rect between players corners
+                      (rect.lt_x <= player_rb_x && rect.rb_x >= player_lt_x)) {
+                hit = true;
+                
+                      //for vertical rect
+            } else if(i===1 &&
+                      (player_lt_x < rect.lt_x && rect.rb_x < player_rb_x) && //rect between players corners
+                      (rect.lt_y <= player_rb_y && rect.rb_y >= player_lt_y)) {
+                hit = true;
+            }
+            i++;
         }
+
+        return hit;
     }
 }
 

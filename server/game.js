@@ -1,4 +1,4 @@
-import { GB_SIZE, FIELD_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH } from '../public/constants.js';
+import { GB_SIZE, GB_FIELDS, FIELD_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH, FIXED_OBSTACLES } from '../public/constants.js';
 import { getRandomColor } from './utils.js';
 
 const TIMER_INTERVAL = 20; //[ms]
@@ -131,11 +131,44 @@ export class Room {
         
         return id;
     }
-    isValidPosition(x, y) {
-        if(x < 0 || y < 0 || x > GB_SIZE - PLAYER_SIZE  || y > GB_SIZE - PLAYER_SIZE) {
-            return false;
+    validatePosition(old_x, old_y, x, y) {
+        //outer boundaries
+        if(x < 0) x = 0;
+        else if(x > (GB_SIZE - PLAYER_SIZE)) x = GB_SIZE - PLAYER_SIZE;
+        else if(y < 0) y = 0;
+        else if(y > (GB_SIZE - PLAYER_SIZE)) y = GB_SIZE - PLAYER_SIZE;
+
+        //obstacles
+        else {
+            //index of current position in obstacle-matrix (left-top, right-bottom corner)
+            let lt_j = Math.floor(old_x / FIELD_SIZE);
+            let lt_i = Math.floor(old_y / FIELD_SIZE);
+            let rb_j = Math.floor((old_x + PLAYER_SIZE) / FIELD_SIZE);
+            let rb_i = Math.floor((old_y + PLAYER_SIZE) / FIELD_SIZE);
+
+            //there is an obstacle on the left side
+            if((FIXED_OBSTACLES[GB_FIELDS * lt_i + (lt_j-1)] || //top left corner
+               FIXED_OBSTACLES[GB_FIELDS * rb_i + (lt_j-1)]) && //bottom left corner
+                                      x < lt_j * FIELD_SIZE) { 
+                x = lt_j * FIELD_SIZE;
+            //upper side
+            } else if ((FIXED_OBSTACLES[GB_FIELDS * (lt_i-1) + lt_j] || //top left corner
+                        FIXED_OBSTACLES[GB_FIELDS * (lt_i-1) + rb_j]) && //top right corner
+                                               y < lt_i * FIELD_SIZE) { 
+                y = lt_i * FIELD_SIZE;
+            //right side
+            } else if ((FIXED_OBSTACLES[GB_FIELDS * (lt_i) + (rb_j+1)] || //top right corner
+                        FIXED_OBSTACLES[GB_FIELDS * (rb_i) + (rb_j+1)]) && //bottom right corner
+                                x+PLAYER_SIZE > (rb_j+1) * FIELD_SIZE) {
+                //TODO
+            //lower side
+            } else if ((FIXED_OBSTACLES[GB_FIELDS * (rb_i+1) + (lt_j)] || //bottom left corner
+                        FIXED_OBSTACLES[GB_FIELDS * (rb_i+1) + (rb_j)]) && //bottom right corner
+                                y+PLAYER_SIZE > (rb_i+1) * FIELD_SIZE) { 
+                //TODO
+            }
         }
-        return true;
+        return {x: x, y: y};
     }
     updatePlayerPosition(player) {
         let x_, y_;
@@ -160,10 +193,11 @@ export class Room {
             default:    //not moving
                 return;
         }
-        if(this.isValidPosition(x_, y_)) {
-            player.pos.x = x_;
-            player.pos.y = y_;
-        }
+
+        player.pos = this.validatePosition(player.pos.x, player.pos.y, x_, y_);
+
+        //player.pos.x = x_;
+        //player.pos.y = y_;
         
     }
     removePlayer() {

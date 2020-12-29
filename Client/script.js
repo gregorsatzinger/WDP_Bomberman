@@ -1,4 +1,4 @@
-import {GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH, FIXED_OBSTACLES} from '/constants.js';
+import {GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH, FIXED_OBSTACLES, GB_FIELDS, FIELD_SIZE} from '/constants.js';
 
 window.onload = function() {
     document.getElementById("newBtn").onclick = createGame;
@@ -130,13 +130,18 @@ function renderBombs(bombs) {
 }
 
 function renderObstacles(obstacles) {
-    obstacles.forEach(o => {
-        ctx.fillStyle = "#A8A8A8";
-        ctx.beginPath();
-        ctx.rect(o.x, o.y, o.size, o.size);
-        ctx.closePath();
-        ctx.fill();
-    })
+    ctx.fillStyle = "#A8A8A8";
+    ctx.beginPath();
+    for(let i = 0; i < GB_FIELDS; i++) {
+        for(let j = 0; j < GB_FIELDS; j++) {
+            if(obstacles[GB_FIELDS * i + j]) {
+                ctx.rect(j * FIELD_SIZE, i * FIELD_SIZE, FIELD_SIZE, FIELD_SIZE);
+            }
+        }
+    }
+    ctx.closePath();
+    ctx.fill();
+    
 }
 
 function createGame() {

@@ -8,6 +8,18 @@ const BOMB_DETONATION_TIME = 1/*s*/ * 1000/TIMER_INTERVAL; //duration of detonat
 const MOVING_STEP = GB_SIZE/80; //how far does a player move by one timer interval --> speed
 
 export function initalGameState() {
+
+    //generating random var_obstacles
+    let var_obstacles = [];
+
+    for(let i = 0; i < GB_FIELDS; i++) {
+        for(let j = 0; j < GB_FIELDS; j++) {
+            if((i > 1 || j > 1) && (i < GB_FIELDS-2 || j < GB_FIELDS-2)) { //not too close to the players
+                var_obstacles[GB_FIELDS * i + j] = Math.random() < 0.65 && !FIXED_OBSTACLES[GB_FIELDS * i + j];
+            }
+        }
+    }
+
     return {
         players: [
         {
@@ -32,6 +44,7 @@ export function initalGameState() {
             }
         ],
         bombs: [],
+        var_obstacles: var_obstacles
     };
 }
 
@@ -146,8 +159,33 @@ export class Room {
             let rb_j = Math.floor((old_x + PLAYER_SIZE-1) / FIELD_SIZE);
             let rb_i = Math.floor((old_y + PLAYER_SIZE-1) / FIELD_SIZE);
 
+            //for fixed and variable obstacles
+            for(let obstacle of [FIXED_OBSTACLES, this.gameState.var_obstacles]) {
+                //there is an obstacle on the left side
+                if((obstacle[GB_FIELDS * lt_i + (lt_j-1)] || //top left corner
+                    obstacle[GB_FIELDS * rb_i + (lt_j-1)]) && //bottom left corner
+                                        x < lt_j * FIELD_SIZE) { //player touches left obstacle
+                    x = lt_j * FIELD_SIZE;
+                //upper side
+                } else if ((obstacle[GB_FIELDS * (lt_i-1) + lt_j] || //top left corner
+                            obstacle[GB_FIELDS * (lt_i-1) + rb_j]) && //top right corner
+                                                    y < lt_i * FIELD_SIZE) { //player touches top obstacle
+                    y = lt_i * FIELD_SIZE;
+                //right side
+                } else if ((obstacle[GB_FIELDS * (lt_i) + (rb_j+1)] || //top right corner
+                            obstacle[GB_FIELDS * (rb_i) + (rb_j+1)]) && //bottom right corner
+                                    x+PLAYER_SIZE > (rb_j+1) * FIELD_SIZE) { //player touches right obstacle
+                    x = (rb_j+1) * FIELD_SIZE - PLAYER_SIZE;
+                //lower side
+                } else if ((obstacle[GB_FIELDS * (rb_i+1) + (lt_j)] || //bottom left corner
+                            obstacle[GB_FIELDS * (rb_i+1) + (rb_j)]) && //bottom right corner
+                                    y+PLAYER_SIZE > (rb_i+1) * FIELD_SIZE) { //player touches bottom obstacle
+                    y = (rb_i+1) * FIELD_SIZE - PLAYER_SIZE;
+                }
+            }
+
             //there is an obstacle on the left side
-            if((FIXED_OBSTACLES[GB_FIELDS * lt_i + (lt_j-1)] || //top left corner
+            /*if((FIXED_OBSTACLES[GB_FIELDS * lt_i + (lt_j-1)] || //top left corner
                FIXED_OBSTACLES[GB_FIELDS * rb_i + (lt_j-1)]) && //bottom left corner
                                       x < lt_j * FIELD_SIZE) { //player touches left obstacle
                 x = lt_j * FIELD_SIZE;
@@ -166,7 +204,7 @@ export class Room {
                         FIXED_OBSTACLES[GB_FIELDS * (rb_i+1) + (rb_j)]) && //bottom right corner
                                 y+PLAYER_SIZE > (rb_i+1) * FIELD_SIZE) { //player touches bottom obstacle
                 y = (rb_i+1) * FIELD_SIZE - PLAYER_SIZE;
-            }
+            }*/
         }
         return {x: x, y: y};
     }

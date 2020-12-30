@@ -124,8 +124,8 @@ socket.on('gameUpdate', (state) => {
     r_clearRect(ctx, GB_SIZE, GB_SIZE, 1);
     renderPlayers(ctx, state.players, 1);
     renderBombs(ctx, state.bombs, 1);
-    renderObstacles(ctx, FIXED_OBSTACLES, 1);
-    //TODO: renderObstacles(state.var_obstacles);
+    renderObstacles(ctx, FIXED_OBSTACLES, "#A8A8A8", 1); //gray
+    renderObstacles(ctx, state.var_obstacles, "#DEB887", 1);  //brown
     
     //hacky solution for now. Messaging system probably gets changed later anyway
     let infoText = document.getElementById('bottomPanel').innerText;

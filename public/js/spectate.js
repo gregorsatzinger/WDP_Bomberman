@@ -111,7 +111,7 @@ function renderObstacles(ctx, obstacles) {
         }
     }
     ctx.closePath();
-    ctx.fill(); 
+    ctx.fill();
 }
 
 socket.on('gameUpdate', (state) => {

@@ -28,7 +28,7 @@ export function renderBombs(ctx, bombs, resizeFactor) {
         if(!b.detonated) { //draw bomb
             ctx.fillStyle = "#000000";
             ctx.beginPath();
-            r_arc(ctx, b.x, b.y, b.radius, resizeFactor);
+            r_arc(ctx, b.x, b.y, BOMB_RADIUS, resizeFactor);
             ctx.closePath();
             ctx.fill();
         } else { //draw explosion
@@ -50,8 +50,8 @@ export function renderBombs(ctx, bombs, resizeFactor) {
     });
 }
 
-export function renderObstacles(ctx, obstacles, resizeFactor) {
-    ctx.fillStyle = "#A8A8A8";
+export function renderObstacles(ctx, obstacles, color, resizeFactor) {
+    ctx.fillStyle = color;
     ctx.beginPath();
     for(let i = 0; i < GB_FIELDS; i++) {
         for(let j = 0; j < GB_FIELDS; j++) {
@@ -61,5 +61,7 @@ export function renderObstacles(ctx, obstacles, resizeFactor) {
         }
     }
     ctx.closePath();
-    ctx.fill(); 
+    ctx.fill();
+    ctx.strokeStyle = "#654321";
+    ctx.stroke();
 }

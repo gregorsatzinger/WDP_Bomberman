@@ -1,7 +1,8 @@
 import {GB_SIZE, FIXED_OBSTACLES} from '/constants.js';
 import {r_clearRect, renderPlayers, renderBombs, renderObstacles, getScreenFactor} from '/js/drawing.js'
 
-let RESIZE_FACTOR = 1;
+let RESIZE_FACTOR = getScreenFactor();
+let grid_columns;
 
 let socket = io();
 let panel = document.getElementById("spectatePanel");   
@@ -9,8 +10,8 @@ const ctxs = [];
 
 function createGamePanel() {
     const gamePanel = document.createElement('canvas');
-    gamePanel.height = GB_SIZE / RESIZE_FACTOR;
-    gamePanel.width = GB_SIZE / RESIZE_FACTOR;
+    gamePanel.height = GB_SIZE * RESIZE_FACTOR / grid_columns;
+    gamePanel.width = GB_SIZE * RESIZE_FACTOR / grid_columns;
     gamePanel.style.setProperty('background-color', '#e7e7e7');
     return gamePanel;
 }
@@ -24,19 +25,19 @@ socket.on('gameList', (list) => {
 
     // 1x1, 2x2 or 3x3 grid?
     if(list.length >= 9) {
-        RESIZE_FACTOR = 3;
+        grid_columns = 3;
     } else if(list.length >= 4) {
-        RESIZE_FACTOR = 2;
+        grid_columns = 2;
     } else if(list.length >= 1) {
-        RESIZE_FACTOR = 1;
+        grid_columns = 1;
     } else {
         document.getElementById("gameCodeDisplay").innerHTML = "No games found...";
         return;
     }
     
-    panel.style.setProperty('grid-template-columns', 'repeat(' + RESIZE_FACTOR + ', 1fr)');
+    panel.style.setProperty('grid-template-columns', 'repeat(' + grid_columns + ', 1fr)');
     
-    for(let i = 0; i < RESIZE_FACTOR*RESIZE_FACTOR; i++) {
+    for(let i = 0; i < grid_columns*grid_columns; i++) {
         let p = createGamePanel();
         let ctx = p.getContext("2d");
 
@@ -59,9 +60,9 @@ socket.on('gameUpdate', (state) => {
         } 
     });
 
-    r_clearRect(ctx, GB_SIZE, GB_SIZE, 1/RESIZE_FACTOR);
-    renderPlayers(ctx, state.players, 1/RESIZE_FACTOR);
-    renderBombs(ctx, state.bombs, 1/RESIZE_FACTOR);
-    renderObstacles(ctx, FIXED_OBSTACLES, "#A8A8A8", 1/RESIZE_FACTOR); //gray
-    renderObstacles(ctx, state.var_obstacles, "#DEB887", 1/RESIZE_FACTOR);  //brown
+    r_clearRect(ctx, GB_SIZE, GB_SIZE, RESIZE_FACTOR/grid_columns);
+    renderPlayers(ctx, state.players, RESIZE_FACTOR/grid_columns);
+    renderBombs(ctx, state.bombs, RESIZE_FACTOR/grid_columns);
+    renderObstacles(ctx, FIXED_OBSTACLES, "#A8A8A8", RESIZE_FACTOR/grid_columns); //gray
+    renderObstacles(ctx, state.var_obstacles, "#DEB887", RESIZE_FACTOR/grid_columns);  //brown
 });

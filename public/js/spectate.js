@@ -13,6 +13,23 @@ function createGamePanel() {
     return gamePanel;
 }
 
+/**
+ * Resized drawing function for canvas
+ */
+function r_rect(ctx, x1, y1, x2, y2) {
+    ctx.rect(x1 / RESIZE_FACTOR, y1 / RESIZE_FACTOR, x2 / RESIZE_FACTOR, y2 / RESIZE_FACTOR);
+}
+function r_clearRect(ctx, x1, y1, x2, y2) {
+    ctx.clearRect(x1 / RESIZE_FACTOR, y1 / RESIZE_FACTOR, x2 / RESIZE_FACTOR, y2 / RESIZE_FACTOR);
+}
+//center.x center.y radius, start angle, end angle
+function r_arc(ctx, x1, y1, r, a1, a2) {
+    ctx.arc(x1 / RESIZE_FACTOR, y1 / RESIZE_FACTOR, r / RESIZE_FACTOR, a1, a2);
+}
+
+/**
+ * Show running games
+ */
 socket.emit('requestGamelist');
 
 socket.on('gameList', (list) => {
@@ -46,11 +63,11 @@ socket.on('gameList', (list) => {
 });
 
 function renderPlayers(ctx, players) {
-    ctx.clearRect(0 / RESIZE_FACTOR, 0 / RESIZE_FACTOR, GB_SIZE / RESIZE_FACTOR, GB_SIZE / RESIZE_FACTOR);
+    r_clearRect(ctx, 0, 0, GB_SIZE, GB_SIZE);
     players.forEach(p => {
         ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.rect(p.pos.x / RESIZE_FACTOR, p.pos.y / RESIZE_FACTOR, PLAYER_SIZE / RESIZE_FACTOR, PLAYER_SIZE / RESIZE_FACTOR);
+        r_rect(ctx, p.pos.x, p.pos.y, PLAYER_SIZE, PLAYER_SIZE);
         ctx.closePath();
         ctx.fill();
     });
@@ -61,7 +78,7 @@ function renderBombs(ctx, bombs) {
         if(!b.detonated) { //draw bomb
             ctx.fillStyle = "#000000";
             ctx.beginPath();
-            ctx.arc(b.x / RESIZE_FACTOR, b.y / RESIZE_FACTOR, b.radius / RESIZE_FACTOR, 0, 2 * Math.PI / RESIZE_FACTOR);
+            r_arc(ctx, b.x, b.y, b.radius, 0, 2 * Math.PI);
             ctx.closePath();
             ctx.fill();
         } else { //draw explosion
@@ -73,9 +90,9 @@ function renderBombs(ctx, bombs) {
             // --> boundaries depend on surrounding obstacles
 
             //horizontal rect
-            ctx.rect((b.x - BOMB_DETONATION_WIDTH/2) / RESIZE_FACTOR, (b.y - b.radius)  / RESIZE_FACTOR, BOMB_DETONATION_WIDTH  / RESIZE_FACTOR, b.radius*2  / RESIZE_FACTOR);
+            r_rect(ctx, b.x - BOMB_DETONATION_WIDTH/2, b.y - b.radius, BOMB_DETONATION_WIDTH, b.radius*2);
             //vertical rect
-            ctx.rect((b.x - b.radius) / RESIZE_FACTOR, (b.y - BOMB_DETONATION_WIDTH/2) / RESIZE_FACTOR, b.radius*2 / RESIZE_FACTOR, BOMB_DETONATION_WIDTH / RESIZE_FACTOR);
+            r_rect(ctx, b.x - b.radius, b.y - BOMB_DETONATION_WIDTH/2, b.radius*2, BOMB_DETONATION_WIDTH);
 
             ctx.closePath();
             ctx.fill();
@@ -89,7 +106,7 @@ function renderObstacles(ctx, obstacles) {
     for(let i = 0; i < GB_FIELDS; i++) {
         for(let j = 0; j < GB_FIELDS; j++) {
             if(obstacles[GB_FIELDS * i + j]) {
-                ctx.rect(j * FIELD_SIZE / RESIZE_FACTOR, i * FIELD_SIZE / RESIZE_FACTOR, FIELD_SIZE / RESIZE_FACTOR, FIELD_SIZE / RESIZE_FACTOR);
+                r_rect(ctx, j * FIELD_SIZE, i * FIELD_SIZE, FIELD_SIZE, FIELD_SIZE);
             }
         }
     }

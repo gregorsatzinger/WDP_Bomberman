@@ -143,29 +143,29 @@ export class Room {
             //index of current position in obstacle-matrix (left-top, right-bottom corner)
             let lt_j = Math.floor(old_x / FIELD_SIZE);
             let lt_i = Math.floor(old_y / FIELD_SIZE);
-            let rb_j = Math.floor((old_x + PLAYER_SIZE) / FIELD_SIZE);
-            let rb_i = Math.floor((old_y + PLAYER_SIZE) / FIELD_SIZE);
+            let rb_j = Math.floor((old_x + PLAYER_SIZE-1) / FIELD_SIZE);
+            let rb_i = Math.floor((old_y + PLAYER_SIZE-1) / FIELD_SIZE);
 
             //there is an obstacle on the left side
             if((FIXED_OBSTACLES[GB_FIELDS * lt_i + (lt_j-1)] || //top left corner
                FIXED_OBSTACLES[GB_FIELDS * rb_i + (lt_j-1)]) && //bottom left corner
-                                      x < lt_j * FIELD_SIZE) { 
+                                      x < lt_j * FIELD_SIZE) { //player touches left obstacle
                 x = lt_j * FIELD_SIZE;
             //upper side
             } else if ((FIXED_OBSTACLES[GB_FIELDS * (lt_i-1) + lt_j] || //top left corner
                         FIXED_OBSTACLES[GB_FIELDS * (lt_i-1) + rb_j]) && //top right corner
-                                               y < lt_i * FIELD_SIZE) { 
+                                               y < lt_i * FIELD_SIZE) { //player touches top obstacle
                 y = lt_i * FIELD_SIZE;
             //right side
             } else if ((FIXED_OBSTACLES[GB_FIELDS * (lt_i) + (rb_j+1)] || //top right corner
                         FIXED_OBSTACLES[GB_FIELDS * (rb_i) + (rb_j+1)]) && //bottom right corner
-                                x+PLAYER_SIZE > (rb_j+1) * FIELD_SIZE) {
-                //TODO
+                                x+PLAYER_SIZE > (rb_j+1) * FIELD_SIZE) { //player touches right obstacle
+                x = (rb_j+1) * FIELD_SIZE - PLAYER_SIZE;
             //lower side
             } else if ((FIXED_OBSTACLES[GB_FIELDS * (rb_i+1) + (lt_j)] || //bottom left corner
                         FIXED_OBSTACLES[GB_FIELDS * (rb_i+1) + (rb_j)]) && //bottom right corner
-                                y+PLAYER_SIZE > (rb_i+1) * FIELD_SIZE) { 
-                //TODO
+                                y+PLAYER_SIZE > (rb_i+1) * FIELD_SIZE) { //player touches bottom obstacle
+                y = (rb_i+1) * FIELD_SIZE - PLAYER_SIZE;
             }
         }
         return {x: x, y: y};

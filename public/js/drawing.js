@@ -35,14 +35,9 @@ export function renderBombs(ctx, bombs, resizeFactor) {
             ctx.fillStyle = "#ffa421";
             ctx.beginPath();
 
-            //TODO: use bomb.Explosion object for boundaries of rects.
-            // --> calculating only once (on server side)
-            // --> boundaries depend on surrounding obstacles
-
-            //horizontal rect
-            r_rect(ctx, b.x - BOMB_DETONATION_WIDTH/2, b.y - b.radius, BOMB_DETONATION_WIDTH, b.radius*2, resizeFactor);
-            //vertical rect
-            r_rect(ctx, b.x - b.radius, b.y - BOMB_DETONATION_WIDTH/2, b.radius*2, BOMB_DETONATION_WIDTH, resizeFactor);
+            b.explosion.rects.forEach(rect => {
+                r_rect(ctx, rect.lt_x, rect.lt_y, rect.rb_x - rect.lt_x, rect.rb_y - rect.lt_y, resizeFactor);
+            })
 
             ctx.closePath();
             ctx.fill();

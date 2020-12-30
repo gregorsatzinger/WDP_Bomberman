@@ -49,15 +49,103 @@ export function initalGameState() {
 }
 
 export class Explosion {
-    constructor(x, y) {
+    constructor(x, y, var_obstacles) {
+        /***************** calculate range of explosion (explosion may be hitting an obstacle) ******************/
+
+        //indizes of bomb in obstacle-matrix
+        let bomb_j = Math.floor(x / FIELD_SIZE);
+        let bomb_i = Math.floor(y / FIELD_SIZE);
+        let explosion_range = BOMB_DETONATION_WIDTH / 2;
+
+        //nearest distance to obstacle in every direction
+        let left = GB_FIELDS;
+        let right = GB_FIELDS;
+        let up = GB_FIELDS;
+        let down = GB_FIELDS;
+
+        //left side
+        let max_range = bomb_j - Math.floor((x - explosion_range) / FIELD_SIZE); //maximum number of affected fields
+        let range = 1; //actual number of affected fields (due to obstacles)
+        while(range <= max_range) {
+            let idx = GB_FIELDS * bomb_i + (bomb_j - range); //index - to not calculate it three times
+            if(FIXED_OBSTACLES[idx]) {
+                break; //obstacle found
+            } else if(var_obstacles[idx]) {
+                var_obstacles[idx] = false; //obstacle is destroyed
+                break;
+            }
+            range++;
+        }
+        range > max_range ? left = -1 : left = range; //-1 --> bomb does not hit an obstacle
+
+        //right side
+        max_range = Math.floor((x + explosion_range) / FIELD_SIZE) - bomb_j; //maximum number of affected fields
+        range = 1; //actual number of affected fields (due to obstacles)
+        while(range <= max_range) {
+            let idx = GB_FIELDS * bomb_i + (bomb_j + range); //index - to not calculate it three times
+            if(FIXED_OBSTACLES[idx]) {
+                break; //obstacle found
+            } else if(var_obstacles[idx]) {
+                var_obstacles[idx] = false; //obstacle is destroyed
+                break;
+            }
+            range++;
+        }
+        range > max_range ? right = -1 : right = range; //-1 --> bomb does not hit an obstacle
+
+        //upper side
+        max_range = bomb_i - Math.floor((y - explosion_range) / FIELD_SIZE); //maximum number of affected fields
+        range = 1; //actual number of affected fields (due to obstacles)
+        while(range <= max_range) {
+            let idx = GB_FIELDS * (bomb_i - range) + bomb_j; //index - to not calculate it three times
+            if(FIXED_OBSTACLES[idx]) {
+                break; //obstacle found
+            } else if(var_obstacles[idx]) {
+                var_obstacles[idx] = false; //obstacle is destroyed
+                break;
+            }
+            range++;
+        }
+        range > max_range ? up = -1 : up = range; //-1 --> bomb does not hit an obstacle
+
+        //lower side
+        max_range = Math.floor((y + explosion_range) / FIELD_SIZE) - bomb_i; //maximum number of affected fields
+        range = 1; //actual number of affected fields (due to obstacles)
+        while(range <= max_range) {
+            let idx = GB_FIELDS * (bomb_i + range) + bomb_j; //index - to not calculate it three times
+            if(FIXED_OBSTACLES[idx]) {
+                break; //obstacle found
+            } else if(var_obstacles[idx]) {
+                var_obstacles[idx] = false; //obstacle is destroyed
+                break;
+            }
+            range++;
+        }
+        range > max_range ? down = -1 : down = range; //-1 --> bomb does not hit an obstacle
+
+
+        /************************ calculate explosion rectangles (horizontal/vertical rect) *******************/
         this.rects = [];
 
-        //horizontal rect (left-top and right-bottom corners)
-
-        let lt_x = x - BOMB_DETONATION_WIDTH/2;
+        // horizontal rect (left-top and right-bottom corners)
+        
         let lt_y = y - BOMB_RADIUS;
-        let rb_x = lt_x + BOMB_DETONATION_WIDTH;
+        let lt_x;
+        //bomb does not hit an obstacle or explosion range would not hit the following obstacle too
+        if(left < 0 || (bomb_j - left) * FIELD_SIZE <= x - explosion_range) {
+            lt_x = x - explosion_range;
+        } else { //explosion range needs to be limited, so it does not hit the following obstacle too
+            lt_x = (bomb_j - left) * FIELD_SIZE;
+        }
+
         let rb_y = lt_y + BOMB_RADIUS*2;
+        let rb_x;
+        //bomb does not hit an obstacle or explosion range would not hit the following obstacle too
+        if(right < 0 || x + explosion_range <= (bomb_j + right + 1) * FIELD_SIZE) {
+            rb_x = lt_x + explosion_range * 2;
+        } else { //explosion range needs to be limited, so it does not hit the following obstacle too
+            rb_x = (bomb_j + right + 1) * FIELD_SIZE;
+        }
 
         this.rects.push({
             lt_x: lt_x,
@@ -66,12 +154,25 @@ export class Explosion {
             rb_y: rb_y
         });
 
-        //vertical rect
+        // vertical rect
 
         lt_x = x - BOMB_RADIUS;
-        lt_y = y - BOMB_DETONATION_WIDTH/2;
+        lt_y;
+        //bomb does not hit an obstacle or explosion range would not hit the following obstacle too
+        if(up < 0 || (bomb_i - up) * FIELD_SIZE <= y - explosion_range) {
+            lt_y = y - explosion_range;
+        } else { //explosion range needs to be limited, so it does not hit the following obstacle too
+            lt_y = (bomb_i - up) * FIELD_SIZE;
+        }
+
         rb_x = lt_x + BOMB_RADIUS*2;
-        rb_y = lt_y + BOMB_DETONATION_WIDTH;
+        rb_y;
+        //bomb does not hit an obstacle or explosion range would not hit the following obstacle too
+        if(down < 0 || y + explosion_range <= (bomb_i + down + 1) * FIELD_SIZE) {
+            rb_y = lt_y + explosion_range * 2;
+        } else { //explosion range needs to be limited, so it does not hit the following obstacle too
+            rb_y = (bomb_i + down + 1) * FIELD_SIZE;
+        }
 
         this.rects.push({
             lt_x: lt_x,
@@ -183,28 +284,6 @@ export class Room {
                     y = (rb_i+1) * FIELD_SIZE - PLAYER_SIZE;
                 }
             }
-
-            //there is an obstacle on the left side
-            /*if((FIXED_OBSTACLES[GB_FIELDS * lt_i + (lt_j-1)] || //top left corner
-               FIXED_OBSTACLES[GB_FIELDS * rb_i + (lt_j-1)]) && //bottom left corner
-                                      x < lt_j * FIELD_SIZE) { //player touches left obstacle
-                x = lt_j * FIELD_SIZE;
-            //upper side
-            } else if ((FIXED_OBSTACLES[GB_FIELDS * (lt_i-1) + lt_j] || //top left corner
-                        FIXED_OBSTACLES[GB_FIELDS * (lt_i-1) + rb_j]) && //top right corner
-                                               y < lt_i * FIELD_SIZE) { //player touches top obstacle
-                y = lt_i * FIELD_SIZE;
-            //right side
-            } else if ((FIXED_OBSTACLES[GB_FIELDS * (lt_i) + (rb_j+1)] || //top right corner
-                        FIXED_OBSTACLES[GB_FIELDS * (rb_i) + (rb_j+1)]) && //bottom right corner
-                                x+PLAYER_SIZE > (rb_j+1) * FIELD_SIZE) { //player touches right obstacle
-                x = (rb_j+1) * FIELD_SIZE - PLAYER_SIZE;
-            //lower side
-            } else if ((FIXED_OBSTACLES[GB_FIELDS * (rb_i+1) + (lt_j)] || //bottom left corner
-                        FIXED_OBSTACLES[GB_FIELDS * (rb_i+1) + (rb_j)]) && //bottom right corner
-                                y+PLAYER_SIZE > (rb_i+1) * FIELD_SIZE) { //player touches bottom obstacle
-                y = (rb_i+1) * FIELD_SIZE - PLAYER_SIZE;
-            }*/
         }
         return {x: x, y: y};
     }
@@ -233,10 +312,6 @@ export class Room {
         }
 
         player.pos = this.validatePosition(player.pos.x, player.pos.y, x_, y_);
-
-        //player.pos.x = x_;
-        //player.pos.y = y_;
-        
     }
     removePlayer() {
         if(this.playerCount > 0) this.playerCount--;
@@ -255,14 +330,15 @@ export class Room {
 
         const bombs = this.gameState.bombs;
         
-        bombs.forEach(bomb => {
+        bombs.forEach((bomb,idx) => {
             bomb.timer--;
 
             if(!bomb.detonated) { //bomb is alive
                 if(bomb.timer <= 0) { //bomb detonates now
                     bomb.detonated = true;
                     bomb.timer = BOMB_DETONATION_TIME; //reset timer to detonation time
-                    bomb.explosion = new Explosion(bomb.x, bomb.y); //calc explosion range
+                    //calc explosion range and destroy variable obstacles within explosion
+                    bombs[idx].explosion = new Explosion(bomb.x, bomb.y, this.gameState.var_obstacles); 
                 }
             } else { //bomb is exploding currently
                 //check if hitting a player

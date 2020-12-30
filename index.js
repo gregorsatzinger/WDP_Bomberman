@@ -127,8 +127,6 @@ io.on('connection', (player) => {
             //last player has left --> delete room
             if(clientRooms[player.roomCode].isEmpty()) {
                 delete clientRooms[player.roomCode];
-                console.log("Room " + player.roomCode + " deleted.");
-                console.log(clientRooms.length + " Rooms left.");
                 player.leave(player.roomCode);
             }
         }

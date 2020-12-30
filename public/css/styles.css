@@ -72,3 +72,7 @@ h1 {
 .retroField:focus {
     outline: none;
 }
+#spectatePanel {
+    display: grid;
+    gap: 2rem;
+}

@@ -11,11 +11,14 @@ import {makeid} from './server/utils.js';
 
 import {Explosion, Room} from './server/game.js'
 
-// https://expressjs.com/en/starter/static-files.html
 app.use(express.static(process.cwd() + '/public'));
 
 app.get('/', (req, res) => {
     res.sendFile(process.cwd() + '/client/index.html');
+});
+
+app.get('/spectate', (req, res) => {
+    res.sendFile(process.cwd() + '/client/spectate.html');
 });
 
 // Should probably be moved to public folder aswell. Not sure
@@ -35,16 +38,17 @@ io.on('connection', (player) => {
     player.on('direction', handleDirection);
     player.on('bomb', handleBomb);
     player.on('disconnect', handleDisconnect);
+    player.on('requestGamelist', handleRequestGamelist);
 
     function handleJoinGame(code) {
         //only join if client has no room yet
+        /*
         if(player.roomCode !== -1) {
-            //TODO: error message to client
             player.emit('log', {"type": "error" ,"message": "Already joined another lobby."})
 
             console.log("Client can't join 2 different lobbies!");
         //room does not exist
-        } else if(clientRooms[code] === undefined) {
+        } else*/ if(clientRooms[code] === undefined) {
             //TODO: error message to client
             player.emit('log', {"type": "error" ,"message": "Invalid game code entered."})
             console.log("Room does not exist!");
@@ -129,7 +133,17 @@ io.on('connection', (player) => {
             }
         }
     }
+    function handleRequestGamelist() {
+        const activeGames = [];
+        Object.entries(clientRooms).forEach(([key, value]) => {
+            if(value.isRunning) {
+                activeGames.push(key);
+            }
+        });
+        player.emit('gameList', activeGames);
+    }
 });
+
 
 function startGameLoop(room) {
     if(room.playerCount < 2) {
@@ -140,7 +154,9 @@ function startGameLoop(room) {
             room.update();
             
             // Send gamestate to all players in room
-            io.in(room.roomCode).emit('gameUpdate', room.gameState);
+            const obj = room.gameState;
+            obj.room = room.roomCode; 
+            io.in(room.roomCode).emit('gameUpdate', obj);
         }, TIMER_INTERVAL);
     }
 }

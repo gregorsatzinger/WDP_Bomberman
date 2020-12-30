@@ -139,7 +139,7 @@ export class Explosion {
         if(left < 0 || (bomb_j - left) * FIELD_SIZE <= x - explosion_range) {
             lt_x = x - explosion_range;
         } else { //explosion range needs to be limited, so it does not hit the following obstacle too
-            lt_x = (bomb_j - left) * FIELD_SIZE;
+            lt_x = (bomb_j - left) * FIELD_SIZE + 1;
         }
 
         let rb_y = lt_y + BOMB_RADIUS*2;
@@ -148,7 +148,7 @@ export class Explosion {
         if(right < 0 || x + explosion_range <= (bomb_j + right + 1) * FIELD_SIZE) {
             rb_x = lt_x + explosion_range * 2;
         } else { //explosion range needs to be limited, so it does not hit the following obstacle too
-            rb_x = (bomb_j + right + 1) * FIELD_SIZE;
+            rb_x = (bomb_j + right + 1) * FIELD_SIZE - 1;
         }
 
         this.rects.push({
@@ -166,7 +166,7 @@ export class Explosion {
         if(up < 0 || (bomb_i - up) * FIELD_SIZE <= y - explosion_range) {
             lt_y = y - explosion_range;
         } else { //explosion range needs to be limited, so it does not hit the following obstacle too
-            lt_y = (bomb_i - up) * FIELD_SIZE;
+            lt_y = (bomb_i - up) * FIELD_SIZE + 1;
         }
 
         rb_x = lt_x + BOMB_RADIUS*2;
@@ -175,7 +175,7 @@ export class Explosion {
         if(down < 0 || y + explosion_range <= (bomb_i + down + 1) * FIELD_SIZE) {
             rb_y = lt_y + explosion_range * 2;
         } else { //explosion range needs to be limited, so it does not hit the following obstacle too
-            rb_y = (bomb_i + down + 1) * FIELD_SIZE;
+            rb_y = (bomb_i + down + 1) * FIELD_SIZE - 1;
         }
 
         this.rects.push({
@@ -211,7 +211,6 @@ export class Explosion {
                 //top right corner inside rect?
                 (rect.lt_x  <= player_rb_x && player_rb_x <= rect.rb_x &&
                     rect.lt_y <= player_lt_y && player_lt_y <= rect.rb_y  )) {
-                
                 hit = true;
 
             //special case where player is inside rectangle without touching it with its corners

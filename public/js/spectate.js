@@ -1,4 +1,5 @@
 import {GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH, FIXED_OBSTACLES, GB_FIELDS, FIELD_SIZE} from '/constants.js';
+let RESIZE_FACTOR = 1;
 
 let socket = io();
 let panel = document.getElementById("spectatePanel");   
@@ -6,8 +7,8 @@ const ctxs = [];
 
 function createGamePanel() {
     const gamePanel = document.createElement('canvas');
-    gamePanel.style.setProperty('height', '150px');
-    gamePanel.style.setProperty('width', '150px');
+    gamePanel.setAttribute('height', GB_SIZE / RESIZE_FACTOR+'px');
+    gamePanel.setAttribute('width', GB_SIZE / RESIZE_FACTOR+'px');
     gamePanel.style.setProperty('background-color', '#e7e7e7');
     return gamePanel;
 }
@@ -15,29 +16,24 @@ function createGamePanel() {
 socket.emit('requestGamelist');
 
 socket.on('gameList', (list) => {
-    if(list.length == 0) {
-        document.getElementById("gameCodeDisplay").innerHTML("No games found...");
-        return;
-    } 
 
     // 1x1, 2x2 or 3x3 grid?
-    let size = 1;
     if(list.length >= 9) {
-        size = 3;
+        RESIZE_FACTOR = 3;
     } else if(list.length >= 4) {
-        size = 2;
+        RESIZE_FACTOR = 2;
+    } else if(list.length >= 1) {
+        RESIZE_FACTOR = 1;
+    } else {
+        document.getElementById("gameCodeDisplay").innerHTML = "No games found...";
+        return;
     }
     
-    panel.style.setProperty('grid-template-columns', 'repeat(' + size + ', 1fr)');
+    panel.style.setProperty('grid-template-columns', 'repeat(' + RESIZE_FACTOR + ', 1fr)');
     
-    for(let i = 0; i < size*size; i++) {
+    for(let i = 0; i < RESIZE_FACTOR*RESIZE_FACTOR; i++) {
         let p = createGamePanel();
         let ctx = p.getContext("2d");
-        ctx.fillStyle = "#FFFFFF";
-        ctx.beginPath();
-        ctx.rect(20, 20, 100, 100);
-        ctx.closePath();
-        ctx.fill();
 
         const room = {};
         room.ctx = ctx;
@@ -50,11 +46,11 @@ socket.on('gameList', (list) => {
 });
 
 function renderPlayers(ctx, players) {
-    ctx.clearRect(0, 0, GB_SIZE, GB_SIZE);
+    ctx.clearRect(0 / RESIZE_FACTOR, 0 / RESIZE_FACTOR, GB_SIZE / RESIZE_FACTOR, GB_SIZE / RESIZE_FACTOR);
     players.forEach(p => {
         ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.rect(p.pos.x, p.pos.y, PLAYER_SIZE, PLAYER_SIZE);
+        ctx.rect(p.pos.x / RESIZE_FACTOR, p.pos.y / RESIZE_FACTOR, PLAYER_SIZE / RESIZE_FACTOR, PLAYER_SIZE / RESIZE_FACTOR);
         ctx.closePath();
         ctx.fill();
     });
@@ -65,7 +61,7 @@ function renderBombs(ctx, bombs) {
         if(!b.detonated) { //draw bomb
             ctx.fillStyle = "#000000";
             ctx.beginPath();
-            ctx.arc(b.x, b.y, b.radius, 0, 2 * Math.PI);
+            ctx.arc(b.x / RESIZE_FACTOR, b.y / RESIZE_FACTOR, b.radius / RESIZE_FACTOR, 0, 2 * Math.PI / RESIZE_FACTOR);
             ctx.closePath();
             ctx.fill();
         } else { //draw explosion
@@ -77,9 +73,9 @@ function renderBombs(ctx, bombs) {
             // --> boundaries depend on surrounding obstacles
 
             //horizontal rect
-            ctx.rect(b.x - BOMB_DETONATION_WIDTH/2, b.y - b.radius, BOMB_DETONATION_WIDTH, b.radius*2);
+            ctx.rect((b.x - BOMB_DETONATION_WIDTH/2) / RESIZE_FACTOR, (b.y - b.radius)  / RESIZE_FACTOR, BOMB_DETONATION_WIDTH  / RESIZE_FACTOR, b.radius*2  / RESIZE_FACTOR);
             //vertical rect
-            ctx.rect(b.x - b.radius, b.y - BOMB_DETONATION_WIDTH/2, b.radius*2, BOMB_DETONATION_WIDTH);
+            ctx.rect((b.x - b.radius) / RESIZE_FACTOR, (b.y - BOMB_DETONATION_WIDTH/2) / RESIZE_FACTOR, b.radius*2 / RESIZE_FACTOR, BOMB_DETONATION_WIDTH / RESIZE_FACTOR);
 
             ctx.closePath();
             ctx.fill();
@@ -93,7 +89,7 @@ function renderObstacles(ctx, obstacles) {
     for(let i = 0; i < GB_FIELDS; i++) {
         for(let j = 0; j < GB_FIELDS; j++) {
             if(obstacles[GB_FIELDS * i + j]) {
-                ctx.rect(j * FIELD_SIZE, i * FIELD_SIZE, FIELD_SIZE, FIELD_SIZE);
+                ctx.rect(j * FIELD_SIZE / RESIZE_FACTOR, i * FIELD_SIZE / RESIZE_FACTOR, FIELD_SIZE / RESIZE_FACTOR, FIELD_SIZE / RESIZE_FACTOR);
             }
         }
     }

@@ -4,6 +4,13 @@ body {
 }
 header {
     padding-left: 2em;
+    background-color:	#e7e7e7;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1rem;
+}
+footer {
     background-color:	#cccccb;
 }
 section {
@@ -13,6 +20,20 @@ section {
 }
 h1 {
     font-family: 'IBM Plex Mono', monospace;
+}
+a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 20px;
+}
+a:hover {
+    color: cornflowerblue;
+}
+a:active {
+    color: blue;
+}
+a:visited {
+    color: black;
+    font-style:initial;
 }
 #ctx {
     display:none;

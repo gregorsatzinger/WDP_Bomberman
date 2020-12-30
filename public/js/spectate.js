@@ -1,5 +1,5 @@
 import {GB_SIZE, FIXED_OBSTACLES} from '/constants.js';
-import {r_clearRect, renderPlayers, renderBombs, renderObstacles} from '/js/drawing.js'
+import {r_clearRect, renderPlayers, renderBombs, renderObstacles, getScreenFactor} from '/js/drawing.js'
 
 let RESIZE_FACTOR = 1;
 
@@ -9,8 +9,8 @@ const ctxs = [];
 
 function createGamePanel() {
     const gamePanel = document.createElement('canvas');
-    gamePanel.setAttribute('height', GB_SIZE / RESIZE_FACTOR+'px');
-    gamePanel.setAttribute('width', GB_SIZE / RESIZE_FACTOR+'px');
+    gamePanel.height = GB_SIZE / RESIZE_FACTOR;
+    gamePanel.width = GB_SIZE / RESIZE_FACTOR;
     gamePanel.style.setProperty('background-color', '#e7e7e7');
     return gamePanel;
 }
@@ -59,9 +59,9 @@ socket.on('gameUpdate', (state) => {
         } 
     });
 
-    r_clearRect(ctx, GB_SIZE, GB_SIZE, RESIZE_FACTOR);
-    renderPlayers(ctx, state.players, RESIZE_FACTOR);
-    renderBombs(ctx, state.bombs, RESIZE_FACTOR);
-    renderObstacles(ctx, FIXED_OBSTACLES, "#A8A8A8", RESIZE_FACTOR); //gray
-    renderObstacles(ctx, state.var_obstacles, "#DEB887", RESIZE_FACTOR);  //brown
+    r_clearRect(ctx, GB_SIZE, GB_SIZE, 1/RESIZE_FACTOR);
+    renderPlayers(ctx, state.players, 1/RESIZE_FACTOR);
+    renderBombs(ctx, state.bombs, 1/RESIZE_FACTOR);
+    renderObstacles(ctx, FIXED_OBSTACLES, "#A8A8A8", 1/RESIZE_FACTOR); //gray
+    renderObstacles(ctx, state.var_obstacles, "#DEB887", 1/RESIZE_FACTOR);  //brown
 });

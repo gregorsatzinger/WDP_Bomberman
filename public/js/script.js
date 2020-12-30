@@ -1,14 +1,15 @@
 import {GB_SIZE, FIXED_OBSTACLES} from '/constants.js';
-import {r_clearRect, renderPlayers, renderBombs, renderObstacles} from '/js/drawing.js'
+import {r_clearRect, renderPlayers, renderBombs, renderObstacles, getScreenFactor} from '/js/drawing.js'
 
 window.onload = function() {
     document.getElementById("newBtn").onclick = createGame;
     document.getElementById("joinBtn").onclick = joinGame;
 
     //resize canvas
-    document.getElementById("ctx").width = GB_SIZE;
-    document.getElementById("ctx").height = GB_SIZE;
-
+    console.log(GB_SIZE * getScreenFactor())
+    document.getElementById("ctx").width = GB_SIZE * getScreenFactor();
+    document.getElementById("ctx").height = GB_SIZE * getScreenFactor();
+    console.log(document.getElementById("ctx").width)
 	window.onkeydown = keyEventHandler;
 	window.onkeyup = keyEventHandler;
 }
@@ -17,7 +18,8 @@ window.onload = function() {
 const PLAYER_SIZE = GB_SIZE/10;
 const BOMB_DETONATION_WIDTH = GB_SIZE/10*3;*/
 
-let ctx = document.getElementById("ctx").getContext("2d");
+let canv = document.getElementById("ctx");
+let ctx = canv.getContext("2d");
 let socket = io();
 
 //bool variables for moving direction
@@ -121,11 +123,15 @@ socket.on('lobbyFull', () => {
 
 socket.on('gameUpdate', (state) => {
     //TODO: replace '1' with resize factor
-    r_clearRect(ctx, GB_SIZE, GB_SIZE, 1);
-    renderPlayers(ctx, state.players, 1);
-    renderBombs(ctx, state.bombs, 1);
-    renderObstacles(ctx, FIXED_OBSTACLES, "#A8A8A8", 1); //gray
-    renderObstacles(ctx, state.var_obstacles, "#DEB887", 1);  //brown
+    const resizeBy = getScreenFactor();
+    canv.height = GB_SIZE * resizeBy;
+    canv.width = GB_SIZE * resizeBy;
+
+    r_clearRect(ctx, GB_SIZE, GB_SIZE, resizeBy);
+    renderPlayers(ctx, state.players, resizeBy);
+    renderBombs(ctx, state.bombs, resizeBy);
+    renderObstacles(ctx, FIXED_OBSTACLES, "#A8A8A8", resizeBy); //gray
+    renderObstacles(ctx, state.var_obstacles, "#DEB887", resizeBy);  //brown
     
     //hacky solution for now. Messaging system probably gets changed later anyway
     let infoText = document.getElementById('bottomPanel').innerText;

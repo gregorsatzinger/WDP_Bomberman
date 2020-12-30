@@ -1,16 +1,19 @@
-import {PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH, GB_FIELDS, FIELD_SIZE} from '/constants.js';
+import {PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH, GB_FIELDS, FIELD_SIZE, GB_SIZE} from '/constants.js';
+export function getScreenFactor() {
+    return window.innerHeight * 0.7 / GB_SIZE;
+}
 /**
  * Resized drawing function for canvas
  */
 export function r_rect(ctx, x, y, width, height, resizeFactor) {
-    ctx.rect(x / resizeFactor, y / resizeFactor, width / resizeFactor, height / resizeFactor);
+    ctx.rect(x * resizeFactor, y * resizeFactor, width * resizeFactor, height * resizeFactor);
 }
 export function r_clearRect(ctx, width, height, resizeFactor) {
-    ctx.clearRect(0, 0, width / resizeFactor, height / resizeFactor);
+    ctx.clearRect(0, 0, width * resizeFactor, height * resizeFactor);
 }
 //center.x center.y radius, start angle, end angle
 export function r_arc(ctx, x, y, r, resizeFactor) {
-    ctx.arc(x / resizeFactor, y / resizeFactor, r / resizeFactor, 0, 2 * Math.PI);
+    ctx.arc(x * resizeFactor, y * resizeFactor, r * resizeFactor, 0, 2 * Math.PI);
 }
 
 export function renderPlayers(ctx, players, resizeFactor) {

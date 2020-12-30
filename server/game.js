@@ -67,12 +67,14 @@ export class Explosion {
         let max_range = bomb_j - Math.floor((x - explosion_range) / FIELD_SIZE); //maximum number of affected fields
         let range = 1; //actual number of affected fields (due to obstacles)
         while(range <= max_range) {
-            let idx = GB_FIELDS * bomb_i + (bomb_j - range); //index - to not calculate it three times
-            if(FIXED_OBSTACLES[idx]) {
-                break; //obstacle found
-            } else if(var_obstacles[idx]) {
-                var_obstacles[idx] = false; //obstacle is destroyed
-                break;
+            if(bomb_j - range >= 0) { //prevent destroying obstacle on the very right side one row above
+                let idx = GB_FIELDS * bomb_i + (bomb_j - range); //index - to not calculate it three times
+                if(FIXED_OBSTACLES[idx]) {
+                    break; //obstacle found
+                } else if(var_obstacles[idx]) {
+                    var_obstacles[idx] = false; //obstacle is destroyed
+                    break;
+                }
             }
             range++;
         }
@@ -82,12 +84,14 @@ export class Explosion {
         max_range = Math.floor((x + explosion_range) / FIELD_SIZE) - bomb_j; //maximum number of affected fields
         range = 1; //actual number of affected fields (due to obstacles)
         while(range <= max_range) {
-            let idx = GB_FIELDS * bomb_i + (bomb_j + range); //index - to not calculate it three times
-            if(FIXED_OBSTACLES[idx]) {
-                break; //obstacle found
-            } else if(var_obstacles[idx]) {
-                var_obstacles[idx] = false; //obstacle is destroyed
-                break;
+            if(bomb_j + range < GB_FIELDS) {
+                let idx = GB_FIELDS * bomb_i + (bomb_j + range); //index - to not calculate it three times
+                if(FIXED_OBSTACLES[idx]) {
+                    break; //obstacle found
+                } else if(var_obstacles[idx]) {
+                    var_obstacles[idx] = false; //obstacle is destroyed
+                    break;
+                }
             }
             range++;
         }

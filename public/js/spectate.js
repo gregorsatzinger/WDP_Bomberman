@@ -114,6 +114,7 @@ function renderObstacles(ctx, obstacles) {
     ctx.fill();
 }
 
+//TODO: use functions of drawing.js
 socket.on('gameUpdate', (state) => {
     let context;
     ctxs.forEach((element) => {

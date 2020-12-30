@@ -2,7 +2,7 @@
 export const GB_SIZE = 400; //gameboard size
 export const GB_FIELDS = 11; //fields within GB_SIZE
 export const FIELD_SIZE = GB_SIZE / GB_FIELDS; //size of one field
-export const PLAYER_SIZE = GB_SIZE/13;
+export const PLAYER_SIZE = GB_SIZE/15;
 export const BOMB_RADIUS = PLAYER_SIZE/3;
 
 //TODO: probably not needed in client anymore when Explosion-class is implemented

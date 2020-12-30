@@ -112,7 +112,7 @@ function renderObstacles(ctx, obstacles) {
     }
     ctx.closePath();
     ctx.fill(); 
-} 
+}
 
 socket.on('gameUpdate', (state) => {
     let context;

@@ -22,9 +22,9 @@ app.get('/spectate', (req, res) => {
 });
 
 // Should probably be moved to public folder aswell. Not sure
-app.get('/script.js', (req, res) => {
+/*app.get('/script.js', (req, res) => {
     res.sendFile(process.cwd() + '/client/script.js');
-});
+});*/
 
 const TIMER_INTERVAL = 20;
 const clientRooms = {}; //Information about all rooms

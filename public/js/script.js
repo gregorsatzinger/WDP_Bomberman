@@ -1,4 +1,5 @@
-import {GB_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH, FIXED_OBSTACLES, GB_FIELDS, FIELD_SIZE} from '/constants.js';
+import {GB_SIZE, FIXED_OBSTACLES} from '/constants.js';
+import {r_clearRect, renderPlayers, renderBombs, renderObstacles} from '/js/drawing.js'
 
 window.onload = function() {
     document.getElementById("newBtn").onclick = createGame;
@@ -91,59 +92,6 @@ function keyEventHandler(e) {
     }
 }
 
-function renderPlayers(players) {
-    ctx.clearRect(0, 0, GB_SIZE, GB_SIZE);
-    players.forEach(p => {
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.rect(p.pos.x, p.pos.y, PLAYER_SIZE, PLAYER_SIZE);
-        ctx.closePath();
-        ctx.fill();
-    });
-}
-
-function renderBombs(bombs) {
-    bombs.forEach(b => {
-        if(!b.detonated) { //draw bomb
-            ctx.fillStyle = "#000000";
-            ctx.beginPath();
-            ctx.arc(b.x, b.y, b.radius, 0, 2 * Math.PI);
-            ctx.closePath();
-            ctx.fill();
-        } else { //draw explosion
-            ctx.fillStyle = "#ffa421";
-            ctx.beginPath();
-
-            //TODO: use bomb.Explosion object for boundaries of rects.
-            // --> calculating only once (on server side)
-            // --> boundaries depend on surrounding obstacles
-
-            //horizontal rect
-            ctx.rect(b.x - BOMB_DETONATION_WIDTH/2, b.y - b.radius, BOMB_DETONATION_WIDTH, b.radius*2);
-            //vertical rect
-            ctx.rect(b.x - b.radius, b.y - BOMB_DETONATION_WIDTH/2, b.radius*2, BOMB_DETONATION_WIDTH);
-
-            ctx.closePath();
-            ctx.fill();
-        }
-    });
-}
-
-function renderObstacles(obstacles) {
-    ctx.fillStyle = "#A8A8A8";
-    ctx.beginPath();
-    for(let i = 0; i < GB_FIELDS; i++) {
-        for(let j = 0; j < GB_FIELDS; j++) {
-            if(obstacles[GB_FIELDS * i + j]) {
-                ctx.rect(j * FIELD_SIZE, i * FIELD_SIZE, FIELD_SIZE, FIELD_SIZE);
-            }
-        }
-    }
-    ctx.closePath();
-    ctx.fill();
-    
-}
-
 function createGame() {
     socket.emit('createGame');
 }
@@ -172,9 +120,11 @@ socket.on('lobbyFull', () => {
 
 
 socket.on('gameUpdate', (state) => {
-    renderPlayers(state.players);
-    renderBombs(state.bombs);
-    renderObstacles(FIXED_OBSTACLES);
+    //TODO: replace '1' with resize factor
+    r_clearRect(ctx, GB_SIZE, GB_SIZE, 1);
+    renderPlayers(ctx, state.players, 1);
+    renderBombs(ctx, state.bombs, 1);
+    renderObstacles(ctx, FIXED_OBSTACLES, 1);
     //TODO: renderObstacles(state.var_obstacles);
     
     //hacky solution for now. Messaging system probably gets changed later anyway

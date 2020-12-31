@@ -35,6 +35,7 @@ socket.on('gameList', (list) => {
         return;
     }
     
+    document.getElementById("gameCodeDisplay").innerHTML = "Spectating " + list.length + " game" + ((list.length == 1) ? "" : "s") + "...";
     panel.style.setProperty('grid-template-columns', 'repeat(' + grid_columns + ', 1fr)');
     
     for(let i = 0; i < list.length; i++) {

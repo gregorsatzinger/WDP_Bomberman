@@ -41,15 +41,7 @@ io.on('connection', (player) => {
     player.on('requestGamelist', handleRequestGamelist);
 
     function handleJoinGame(code) {
-        //only join if client has no room yet
-        /*
-        if(player.roomCode !== -1) {
-            player.emit('log', {"type": "error" ,"message": "Already joined another lobby."})
-
-            console.log("Client can't join 2 different lobbies!");
-        //room does not exist
-        } else*/ if(clientRooms[code] === undefined) {
-            //TODO: error message to client
+        if(clientRooms[code] === undefined) {
             player.emit('log', {"type": "error" ,"message": "Invalid game code entered."})
             console.log("Room does not exist!");
         } else {
@@ -60,11 +52,11 @@ io.on('connection', (player) => {
             console.log('joined lobby');
             player.emit('log', {"type": "success" ,"message": "Joined lobby successfully."})
 
-            //Second player joined -> owner can start game
+            //Second player joined -> p1 can start game
             //Spectators shouldnt start game again
             if(!clientRooms[code].isReady && !clientRooms[code].isRunning) {
                 player.emit('log', {"type": "info" ,"message": "Waiting for lobby owner to start the game..."})
-                clientRooms[code].owner.emit('lobbyFull');
+                clientRooms[code].p1.emit('lobbyFull');
                 clientRooms[code].isReady = true;
             } else {
                 player.emit('log', {"type": "info" ,"message": "Spectating the game..."})
@@ -82,7 +74,7 @@ io.on('connection', (player) => {
             clientRooms[roomCode] = new Room(roomCode);
             player.roomCode = roomCode;
             player.number = clientRooms[roomCode].addPlayer(); //returns ID
-            clientRooms[roomCode].owner = player;
+            clientRooms[roomCode].p1 = player;
             player.join(roomCode);
             player.emit('gameCode', roomCode);
 
@@ -120,7 +112,6 @@ io.on('connection', (player) => {
     
     function handleDisconnect() {
         //update to room system
-        
         if ( clientRooms[player.roomCode] !== undefined ) { //room exists
             clientRooms[player.roomCode].removePlayer();
 
@@ -129,9 +120,12 @@ io.on('connection', (player) => {
                 delete clientRooms[player.roomCode];
                 player.leave(player.roomCode);
             //active player has left
-            } else if(player.number === 0 || player.number === 1) {
-                //otherplayer.send(index.html);
-                //otherplayer.emit("opponent has left");
+            } else if(player.number === 0) {
+                io.in(player.roomCode).emit('log', {"type": "info" ,"message": "Opponent left the game"});
+                clientRooms[player.roomCode].gameResult = "p2";
+            } else if(player.number === 1) {
+                io.in(player.roomCode).emit('log', {"type": "info" ,"message": "Opponent left the game"});
+                clientRooms[player.roomCode].gameResult = "p1";
             }
         }
     }
@@ -150,7 +144,7 @@ io.on('connection', (player) => {
 
 function startGameLoop(room) {
     if(room.playerCount < 2) {
-        //TODO: error message "can't start game with less than 2 players"
+        //Cant get reached
     } else {
         const interval = setInterval(() => {
             // update gamestate of current room
@@ -160,6 +154,21 @@ function startGameLoop(room) {
             const obj = room.gameState;
             obj.room = room.roomCode; 
             io.in(room.roomCode).emit('gameUpdate', obj);
+            
+            //Check if game is over
+            if(room.gameResult != "-") {
+                let msg;
+                if(room.gameResult == "p1") {
+                    msg = "Player 1 won";
+                } else if (room.gameResult == "p2") {
+                    msg = "Player 2 won"
+                } else if (room.gameResult == "tie") {
+                    msg = "Tie";
+                }
+                io.in(room.roomCode).emit('gameOver', msg);
+                room.isRunning = false;
+                clearInterval(interval);
+            }
         }, TIMER_INTERVAL);
     }
 }

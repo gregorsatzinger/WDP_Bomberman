@@ -263,6 +263,7 @@ export class Room {
         this.roomCode = roomCode;
         this.playerCount = 0;
         this.gameState = initalGameState();
+        this.gameResult = "-";
         this.isRunning = false;
         this.isReady = false;
     }
@@ -438,14 +439,11 @@ export class Room {
 
                 if(hitP1 || hitP2) {
                     if(hitP1 && hitP2) {
-                        //player1.emit('tie');
-                        //player2.emit('tie');
+                        this.gameResult = "tie";
                     } else if(hitP1) {
-                        //player1.emit('lost');
-                        //player2.emit('won');
+                        this.gameResult = "p2";
                     } else if(hitP2) {
-                        //player1.emit('won');
-                        //player2.emit('lost');
+                        this.gameResult = "p1";
                     }
                 }
 

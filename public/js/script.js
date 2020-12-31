@@ -108,6 +108,10 @@ socket.on('gameCode', (roomCode) => {
     document.getElementById('gameCodeDisplay').innerText = "Game code: " + roomCode;
 });
 
+socket.on('gameOver', (msg) => {
+    document.getElementById('gameCodeDisplay').innerText = msg;
+});
+
 socket.on('lobbyFull', () => {
     let startBtn = document.createElement('button');
     startBtn.className = "retroBtn";
@@ -122,7 +126,6 @@ socket.on('lobbyFull', () => {
 
 
 socket.on('gameUpdate', (state) => {
-    //TODO: replace '1' with resize factor
     const resizeBy = getScreenFactor();
     canv.height = GB_SIZE * resizeBy;
     canv.width = GB_SIZE * resizeBy;
@@ -133,10 +136,10 @@ socket.on('gameUpdate', (state) => {
     renderObstacles(ctx, FIXED_OBSTACLES, "#A8A8A8", resizeBy); //gray
     renderObstacles(ctx, state.var_obstacles, "#DEB887", resizeBy);  //brown
     
-    //hacky solution for now. Messaging system probably gets changed later anyway
-    let infoText = document.getElementById('bottomPanel').innerText;
-    if(infoText !== "Spectating the game...") {
-        document.getElementById('bottomPanel').innerText = "";
+    //Game started -> reset message
+    let infoPanel = document.getElementById('bottomPanel');
+    if(infoPanel.innerText === "Waiting for lobby owner to start the game...\n") {
+        infoPanel.innerText = "";
     }
 });
 
@@ -150,7 +153,7 @@ socket.on('log', (data) => {
             document.getElementById('gameCodeDisplay').innerText = data.message;
             break;
         case "info":
-            document.getElementById('bottomPanel').innerText = data.message;
+            document.getElementById('bottomPanel').innerText += data.message + "\n";
             break;
         default: break;
     }

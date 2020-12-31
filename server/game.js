@@ -30,6 +30,8 @@ export function initalGameState() {
             },
             color: getRandomColor(),
             direction: 4,
+            bomb_max_cooldown: BOMB_TIMER,  //cooldown after bomb-placing. initially until bomb explodes
+            bomb_curr_cooldown: 0,
             name: "P1"
         }, 
         {
@@ -40,6 +42,8 @@ export function initalGameState() {
             },
             color: getRandomColor(),
             direction: 4,
+            bomb_max_cooldown: BOMB_TIMER,  //cooldown after bomb-placing. initially until bomb explodes
+            bomb_curr_cooldown: 0,
             name: "P2"
             }
         ],
@@ -331,6 +335,10 @@ export class Room {
         this.updatePlayerPosition(player1);
         this.updatePlayerPosition(player2);
 
+        //update bomb-placing cooldown
+        if(player1.bomb_curr_cooldown > 0) player1.bomb_curr_cooldown--;
+        if(player2.bomb_curr_cooldown > 0) player2.bomb_curr_cooldown--;
+
         const bombs = this.gameState.bombs;
         
         bombs.forEach((bomb,idx) => {
@@ -345,8 +353,21 @@ export class Room {
                 }
             } else { //bomb is exploding currently
                 //check if hitting a player
-                if(bomb.explosion.hits(player1)) console.log("hit player 1");
-                if(bomb.explosion.hits(player2)) console.log("hit player 2");
+                let hitP1 = bomb.explosion.hits(player1);
+                let hitP2 = bomb.explosion.hits(player2);
+
+                if(hitP1 || hitP2) {
+                    if(hitP1 && hitP2) {
+                        //player1.emit('tie');
+                        //player2.emit('tie');
+                    } else if(hitP1) {
+                        //player1.emit('lost');
+                        //player2.emit('won');
+                    } else if(hitP2) {
+                        //player1.emit('won');
+                        //player2.emit('lost');
+                    }
+                }
 
                 if(bomb.timer <= 0) { //detonation is over
                     bombs.splice(bombs.indexOf(bomb),1); //delete bomb
@@ -365,13 +386,17 @@ export class Room {
         //only the first 2 players have the permission to play
         if(id < 2) {
             let player = this.gameState.players[id];
-            this.gameState.bombs.push({
-                x: player.pos.x + BOMB_MOVE_FACTOR,
-                y: player.pos.y + BOMB_MOVE_FACTOR,
-                radius: BOMB_RADIUS, //TODO: export constant to client
-                timer: BOMB_TIMER,
-                detonated: false
-            });
+            if(player.bomb_curr_cooldown === 0) { //player is able to place bomb
+                player.bomb_curr_cooldown = player.bomb_max_cooldown; //set cooldown
+
+                this.gameState.bombs.push({
+                    x: player.pos.x + BOMB_MOVE_FACTOR,
+                    y: player.pos.y + BOMB_MOVE_FACTOR,
+                    radius: BOMB_RADIUS, //TODO: export constant to client
+                    timer: BOMB_TIMER,
+                    detonated: false
+                });
+            }
         }
     }
 }

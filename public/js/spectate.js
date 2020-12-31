@@ -24,11 +24,11 @@ socket.emit('requestGamelist');
 socket.on('gameList', (list) => {
 
     // 1x1, 2x2 or 3x3 grid?
-    if(list.length >= 9) {
+    if(list.length > 4) {
         grid_columns = 3;
-    } else if(list.length >= 4) {
+    } else if(list.length > 1) {
         grid_columns = 2;
-    } else if(list.length >= 1) {
+    } else if(list.length == 1) {
         grid_columns = 1;
     } else {
         document.getElementById("gameCodeDisplay").innerHTML = "No games found...";
@@ -37,7 +37,7 @@ socket.on('gameList', (list) => {
     
     panel.style.setProperty('grid-template-columns', 'repeat(' + grid_columns + ', 1fr)');
     
-    for(let i = 0; i < grid_columns*grid_columns; i++) {
+    for(let i = 0; i < list.length; i++) {
         let p = createGamePanel();
         let ctx = p.getContext("2d");
 

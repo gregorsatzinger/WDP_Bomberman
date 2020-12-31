@@ -9,7 +9,7 @@ const io = new Server(httpServer);
 
 import {makeid} from './server/utils.js';
 
-import {Explosion, Room} from './server/game.js'
+import {Room} from './server/game.js'
 
 app.use(express.static(process.cwd() + '/public'));
 
@@ -128,9 +128,14 @@ io.on('connection', (player) => {
             if(clientRooms[player.roomCode].isEmpty()) {
                 delete clientRooms[player.roomCode];
                 player.leave(player.roomCode);
+            //active player has left
+            } else if(player.number === 0 || player.number === 1) {
+                //otherplayer.send(index.html);
+                //otherplayer.emit("opponent has left");
             }
         }
     }
+
     function handleRequestGamelist() {
         const activeGames = [];
         Object.entries(clientRooms).forEach(([key, value]) => {

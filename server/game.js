@@ -1,10 +1,11 @@
-import { GB_SIZE, GB_FIELDS, FIELD_SIZE, PLAYER_SIZE, BOMB_RADIUS, BOMB_DETONATION_WIDTH, FIXED_OBSTACLES } from '../public/constants.js';
+import { GB_SIZE, GB_FIELDS, FIELD_SIZE, PLAYER_SIZE, BOMB_RADIUS, FIXED_OBSTACLES, POWER_UPS_COUNT, POWER_UPS_PROBABILITY, POWER_UPS } from '../public/constants.js';
 import { getRandomColor } from './utils.js';
 
 const TIMER_INTERVAL = 20; //[ms] TODO: into constants.js
 const BOMB_MOVE_FACTOR = PLAYER_SIZE/2; //to place bomb in the middle of the player
 const BOMB_TIMER = 3/*s*/ * 1000/TIMER_INTERVAL; //time until detonation
 const BOMB_DETONATION_TIME = 1/*s*/ * 1000/TIMER_INTERVAL; //duration of detonation
+const BOMB_DETONATION_WIDTH = GB_SIZE/10*3;
 const MOVING_STEP = GB_SIZE/80; //how far does a player move by one timer interval --> speed
 
 export function initalGameState() {
@@ -16,6 +17,8 @@ export function initalGameState() {
         for(let j = 0; j < GB_FIELDS; j++) {
             if((i > 1 || j > 1) && (i < GB_FIELDS-2 || j < GB_FIELDS-2)) { //not too close to the players
                 var_obstacles[GB_FIELDS * i + j] = Math.random() < 0.65 && !FIXED_OBSTACLES[GB_FIELDS * i + j];
+            } else {
+                var_obstacles[GB_FIELDS * i + j] = false;
             }
         }
     }
@@ -52,9 +55,9 @@ export function initalGameState() {
     };
 }
 
-export class Explosion {
+class Explosion {
     constructor(x, y, var_obstacles) {
-        /***************** calculate range of explosion (explosion may be hitting an obstacle) ******************/
+        /***************** calculate range of explosion (explosion may be hitting (destroying) an obstacle) ******************/
 
         //indizes of bomb in obstacle-matrix
         let bomb_j = Math.floor(x / FIELD_SIZE);
@@ -75,8 +78,8 @@ export class Explosion {
                 let idx = GB_FIELDS * bomb_i + (bomb_j - range); //index - to not calculate it three times
                 if(FIXED_OBSTACLES[idx]) {
                     break; //obstacle found
-                } else if(var_obstacles[idx]) {
-                    var_obstacles[idx] = false; //obstacle is destroyed
+                } else if(var_obstacles[idx] !== false) { //either true or index of power_up
+                    this.destroy_var_obstacle(var_obstacles, idx);
                     break;
                 }
             }
@@ -92,8 +95,8 @@ export class Explosion {
                 let idx = GB_FIELDS * bomb_i + (bomb_j + range); //index - to not calculate it three times
                 if(FIXED_OBSTACLES[idx]) {
                     break; //obstacle found
-                } else if(var_obstacles[idx]) {
-                    var_obstacles[idx] = false; //obstacle is destroyed
+                } else if(var_obstacles[idx] !== false) { //either true or index of power_up
+                    this.destroy_var_obstacle(var_obstacles, idx);
                     break;
                 }
             }
@@ -108,8 +111,8 @@ export class Explosion {
             let idx = GB_FIELDS * (bomb_i - range) + bomb_j; //index - to not calculate it three times
             if(FIXED_OBSTACLES[idx]) {
                 break; //obstacle found
-            } else if(var_obstacles[idx]) {
-                var_obstacles[idx] = false; //obstacle is destroyed
+            } else if(var_obstacles[idx] !== false) { //either true or index of power_up
+                this.destroy_var_obstacle(var_obstacles, idx);
                 break;
             }
             range++;
@@ -123,8 +126,8 @@ export class Explosion {
             let idx = GB_FIELDS * (bomb_i + range) + bomb_j; //index - to not calculate it three times
             if(FIXED_OBSTACLES[idx]) {
                 break; //obstacle found
-            } else if(var_obstacles[idx]) {
-                var_obstacles[idx] = false; //obstacle is destroyed
+            } else if(var_obstacles[idx] !== false) { //either true or index of power_up
+                this.destroy_var_obstacle(var_obstacles, idx);
                 break;
             }
             range++;
@@ -189,6 +192,24 @@ export class Explosion {
             rb_y: rb_y
         });
     }
+    //helper method to either
+    // - destroy var_obstacle and (maybe) replace it by a power up
+    // - destroy power up
+    destroy_var_obstacle(var_obstacles, idx) {
+        //there is an obstacle
+        if(var_obstacles[idx] === true) {
+            //obstacle is destroyed - maybe replaced by power up
+            if(Math.random() < POWER_UPS_PROBABILITY) { //under variable obstacle may be a power up
+                //index in POWER_UPS array
+                var_obstacles[idx] = Math.floor(Math.random() * POWER_UPS_COUNT);
+            } else {
+                var_obstacles[idx] = false; //obstacle is destroyed
+            }
+        } else { //there is a power up
+            //destroy power up
+            var_obstacles[idx] = false;
+        }
+    }
     hits(player) {
         //TODO: any point of player touching one of the rectangles?
         //player:
@@ -252,7 +273,7 @@ export class Room {
         
         return id;
     }
-    validatePosition(old_x, old_y, x, y) {
+    validatePosition(player, x, y) {
         //outer boundaries
         if(x < 0) x = 0;
         else if(x > (GB_SIZE - PLAYER_SIZE)) x = GB_SIZE - PLAYER_SIZE;
@@ -261,6 +282,9 @@ export class Room {
 
         //obstacles
         else {
+            let old_x = player.pos.x;
+            let old_y = player.pos.y;
+
             //index of current position in obstacle-matrix (left-top, right-bottom corner)
             let lt_j = Math.floor(old_x / FIELD_SIZE);
             let lt_i = Math.floor(old_y / FIELD_SIZE);
@@ -269,26 +293,82 @@ export class Room {
 
             //for fixed and variable obstacles
             for(let obstacle of [FIXED_OBSTACLES, this.gameState.var_obstacles]) {
-                //there is an obstacle on the left side
-                if((obstacle[GB_FIELDS * lt_i + (lt_j-1)] || //top left corner
-                    obstacle[GB_FIELDS * rb_i + (lt_j-1)]) && //bottom left corner
+                //left side
+                let idx_1 = GB_FIELDS * lt_i + (lt_j-1);
+                let idx_2 = GB_FIELDS * rb_i + (lt_j-1);
+                //there is an obstacle/power up on the left side
+                if((obstacle[idx_1] !== false|| //top left corner
+                    obstacle[idx_2] !== false) && //bottom left corner
                                         x < lt_j * FIELD_SIZE) { //player touches left obstacle
-                    x = lt_j * FIELD_SIZE;
+                    if(obstacle[idx_1] === true || obstacle[idx_2] === true) { //player ran against obstacle
+                        x = lt_j * FIELD_SIZE;
+                    } else { //player ran against power up
+                        if(obstacle[idx_1] !== false) {
+                            POWER_UPS[obstacle[idx_1]].upgradePlayer(player); //player collects power up --> upgrade
+                            obstacle[idx_1] = false; //delete power up
+                        }
+                        if(obstacle[idx_2] !== false) {
+                            POWER_UPS[obstacle[idx_2]].upgradePlayer(player); //player collects power up --> upgrade
+                            obstacle[idx_2] = false; //delete power up
+                        }
+                    }                   
+                } 
                 //upper side
-                } else if ((obstacle[GB_FIELDS * (lt_i-1) + lt_j] || //top left corner
-                            obstacle[GB_FIELDS * (lt_i-1) + rb_j]) && //top right corner
+                idx_1 = GB_FIELDS * (lt_i-1) + lt_j;
+                idx_2 = GB_FIELDS * (lt_i-1) + rb_j;
+                if ((obstacle[idx_1] !== false || //top left corner
+                    obstacle[idx_2] !== false) && //top right corner
                                                     y < lt_i * FIELD_SIZE) { //player touches top obstacle
-                    y = lt_i * FIELD_SIZE;
+                    if(obstacle[idx_1] === true || obstacle[idx_2] === true) { //player ran against obstacle
+                        y = lt_i * FIELD_SIZE;
+                    } else { //player ran against power up
+                        if(obstacle[idx_1] !== false) {
+                            POWER_UPS[obstacle[idx_1]].upgradePlayer(player); //player collects power up --> upgrade
+                            obstacle[idx_1] = false; //delete power up
+                        }
+                        if(obstacle[idx_2] !== false) {
+                            POWER_UPS[obstacle[idx_2]].upgradePlayer(player); //player collects power up --> upgrade
+                            obstacle[idx_2] = false; //delete power up
+                        }
+                    }   
+                }
                 //right side
-                } else if ((obstacle[GB_FIELDS * (lt_i) + (rb_j+1)] || //top right corner
-                            obstacle[GB_FIELDS * (rb_i) + (rb_j+1)]) && //bottom right corner
+                idx_1 = GB_FIELDS * (lt_i) + (rb_j+1);
+                idx_2 = GB_FIELDS * (rb_i) + (rb_j+1);
+                if ((obstacle[idx_1] !== false || //top right corner
+                    obstacle[idx_2] !== false) && //bottom right corner
                                     x+PLAYER_SIZE > (rb_j+1) * FIELD_SIZE) { //player touches right obstacle
-                    x = (rb_j+1) * FIELD_SIZE - PLAYER_SIZE;
+                    if(obstacle[idx_1] === true || obstacle[idx_2] === true) { //player ran against obstacle
+                        x = (rb_j+1) * FIELD_SIZE - PLAYER_SIZE;
+                    } else { //player ran against power up
+                        if(obstacle[idx_1] !== false) {
+                            POWER_UPS[obstacle[idx_1]].upgradePlayer(player); //player collects power up --> upgrade
+                            obstacle[idx_1] = false; //delete power up
+                        }
+                        if(obstacle[idx_2] !== false) {
+                            POWER_UPS[obstacle[idx_2]].upgradePlayer(player); //player collects power up --> upgrade
+                            obstacle[idx_2] = false; //delete power up
+                        }
+                    }  
+                }
                 //lower side
-                } else if ((obstacle[GB_FIELDS * (rb_i+1) + (lt_j)] || //bottom left corner
-                            obstacle[GB_FIELDS * (rb_i+1) + (rb_j)]) && //bottom right corner
+                idx_1 = GB_FIELDS * (rb_i+1) + (lt_j);
+                idx_2 = GB_FIELDS * (rb_i+1) + (rb_j);
+                if ((obstacle[idx_1] !== false || //bottom left corner
+                    obstacle[idx_2] !== false) && //bottom right corner
                                     y+PLAYER_SIZE > (rb_i+1) * FIELD_SIZE) { //player touches bottom obstacle
-                    y = (rb_i+1) * FIELD_SIZE - PLAYER_SIZE;
+                    if(obstacle[idx_1] === true || obstacle[idx_2] === true) { //player ran against obstacle
+                        y = (rb_i+1) * FIELD_SIZE - PLAYER_SIZE;
+                    } else { //player ran against power up
+                        if(obstacle[idx_1] !== false) {
+                            POWER_UPS[obstacle[idx_1]].upgradePlayer(player); //player collects power up --> upgrade
+                            obstacle[idx_1] = false; //delete power up
+                        }
+                        if(obstacle[idx_2] !== false) {
+                            POWER_UPS[obstacle[idx_2]].upgradePlayer(player); //player collects power up --> upgrade
+                            obstacle[idx_2] = false; //delete power up
+                        }
+                    } 
                 }
             }
         }
@@ -318,7 +398,7 @@ export class Room {
                 return;
         }
 
-        player.pos = this.validatePosition(player.pos.x, player.pos.y, x_, y_);
+        player.pos = this.validatePosition(player, x_, y_);
     }
     removePlayer() {
         if(this.playerCount > 0) this.playerCount--;

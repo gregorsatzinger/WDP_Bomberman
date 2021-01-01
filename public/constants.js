@@ -3,10 +3,11 @@ export const GB_SIZE = 400; //gameboard size
 export const GB_FIELDS = 11; //fields within GB_SIZE
 export const FIELD_SIZE = GB_SIZE / GB_FIELDS; //size of one field
 export const PLAYER_SIZE = GB_SIZE/15;
+export const INIT_MOVING_STEP = GB_SIZE/80; //how far does a player move by one timer interval (speed)
 export const BOMB_RADIUS = PLAYER_SIZE/3;
 
 export const POWER_UPS_COUNT = 3;
-export const POWER_UPS_PROBABILITY = 0.8;
+export const POWER_UPS_PROBABILITY = 0.2;
 export const POWER_UPS = [];
 
 export const FIXED_OBSTACLES = [];
@@ -48,7 +49,8 @@ export class Speed{
         ctx.stroke();
     }
     upgradePlayer(player) {
-        console.log("Player "+player.name+" gets Speed");
+        //raised speed of player
+        player.moving_step += INIT_MOVING_STEP/5;
     }
 }
 
@@ -72,7 +74,7 @@ export class BombPlacingSpeed {
         ctx.fill();
     }
     upgradePlayer(player) {
-        console.log("Player "+player.name+" gets BombPlacingSpeed");
+        player.bomb_max_cooldown /= 2;
     }
 }
 
@@ -98,11 +100,10 @@ export class ExplosionRange {
         ctx.fill();
     }
     upgradePlayer(player) {
-        console.log("Player "+player.name+" gets explosion range");
+        player.bomb_detonation_width *= 1.2;
     }
 }
 
 POWER_UPS.push(new Speed());
 POWER_UPS.push(new BombPlacingSpeed());
 POWER_UPS.push(new ExplosionRange());
-

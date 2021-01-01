@@ -1,26 +1,31 @@
 import {GB_SIZE, FIXED_OBSTACLES} from '/constants.js';
 import {r_clearRect, renderPlayers, renderBombs, renderObstacles, getScreenFactor} from '/js/drawing.js'
 
+let canv = document.getElementById("ctx");
+let ctx = canv.getContext("2d");
+let socket = io();
+let resizeBy;
+
 window.onload = function() {
     document.getElementById("newBtn").onclick = createGame;
     document.getElementById("joinBtn").onclick = joinGame;
 
     //resize canvas
-    console.log(GB_SIZE * getScreenFactor())
-    document.getElementById("ctx").width = GB_SIZE * getScreenFactor();
-    document.getElementById("ctx").height = GB_SIZE * getScreenFactor();
-    console.log(document.getElementById("ctx").width)
+    resizeBy = getScreenFactor();
+    canv.height = GB_SIZE * resizeBy;
+    canv.width = GB_SIZE * resizeBy;
+
+    //add keylistener
 	window.onkeydown = keyEventHandler;
 	window.onkeyup = keyEventHandler;
 }
+window.onresize = function() {
+    resizeBy = getScreenFactor();
+    canv.height = GB_SIZE * resizeBy;
+    canv.width = GB_SIZE * resizeBy;
+}
 
-/*const GB_SIZE = 400; //gameboard size
-const PLAYER_SIZE = GB_SIZE/10;
-const BOMB_DETONATION_WIDTH = GB_SIZE/10*3;*/
 
-let canv = document.getElementById("ctx");
-let ctx = canv.getContext("2d");
-let socket = io();
 
 //bool variables for moving direction
 //left (0) - up (1) - right (2) - down (3)
@@ -126,10 +131,6 @@ socket.on('lobbyFull', () => {
 
 
 socket.on('gameUpdate', (state) => {
-    const resizeBy = getScreenFactor();
-    canv.height = GB_SIZE * resizeBy;
-    canv.width = GB_SIZE * resizeBy;
-
     r_clearRect(ctx, GB_SIZE, GB_SIZE, resizeBy);
     renderPlayers(ctx, state.players, resizeBy);
     renderBombs(ctx, state.bombs, resizeBy);

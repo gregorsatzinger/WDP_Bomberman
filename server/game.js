@@ -282,6 +282,7 @@ export class Room {
         this.gameResult = "-";
         this.isRunning = false;
         this.isReady = false;
+        this.isPrivate = true;
     }
     //returns player-ID
     addPlayer() {

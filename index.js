@@ -35,6 +35,8 @@ io.on('connection', (player) => {
     player.on('bomb', handleBomb);
     player.on('disconnect', handleDisconnect);
     player.on('requestGamelist', handleRequestGamelist);
+    player.on('quickGame', handleQuickGame);
+
 
     function handleJoinGame(code) {
         if(clientRooms[code] === undefined) {
@@ -76,9 +78,31 @@ io.on('connection', (player) => {
 
             console.log('opened lobby');
             player.emit('log', {"type": "success" ,"message": "Created lobby successfully."})
+            player.emit('log', {"type": "info" ,"message": "Waiting for second player to join..."})
 
             //Waiting for second player to connect...
         }
+    }
+
+    function handleQuickGame() {
+        let availableRoom = "";
+        //Find available room
+        Object.entries(clientRooms).forEach(([key, value]) => {
+            if(!value.isPrivate && !value.isRunning) {
+                availableRoom = key;
+            }
+        });
+        //no lobby found -> create new one
+        if(availableRoom == "") {
+            //Create new game and sets player.roomCode to created lobby
+            handleCreateGame();
+            clientRooms[player.roomCode].isPrivate = false;
+        } 
+        //lobby found -> join
+        else {
+            handleJoinGame(availableRoom);
+        }
+        
     }
 
     function handleStartGame() {

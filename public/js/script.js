@@ -9,6 +9,7 @@ let resizeBy;
 window.onload = function() {
     document.getElementById("newBtn").onclick = createGame;
     document.getElementById("joinBtn").onclick = joinGame;
+    document.getElementById("quickpayBtn").onclick = quickGame;
 
     //resize canvas
     resizeBy = getScreenFactor();
@@ -108,6 +109,10 @@ function joinGame() {
     socket.emit('joinGame', code);
 }
 
+function quickGame() {
+    socket.emit('quickGame');
+}
+
 socket.on('gameCode', (roomCode) => {
     console.log(roomCode);
     document.getElementById('gameCodeDisplay').innerText = "Game code: " + roomCode;
@@ -139,7 +144,8 @@ socket.on('gameUpdate', (state) => {
     
     //Game started -> reset message
     let infoPanel = document.getElementById('bottomPanel');
-    if(infoPanel.innerText === "Waiting for lobby owner to start the game...\n") {
+    if( (infoPanel.innerText === "Waiting for lobby owner to start the game...\n") || 
+        (infoPanel.innerText === "Waiting for second player to join...\n")) {
         infoPanel.innerText = "";
     }
 });

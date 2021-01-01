@@ -1,26 +1,32 @@
-import {GB_SIZE, FIXED_OBSTACLES} from '/constants.js';
+import {GB_SIZE, FIXED_OBSTACLES} from '/js/constants.js';
 import {r_clearRect, renderPlayers, renderBombs, renderObstacles, getScreenFactor} from '/js/drawing.js'
-
-window.onload = function() {
-    document.getElementById("newBtn").onclick = createGame;
-    document.getElementById("joinBtn").onclick = joinGame;
-
-    //resize canvas
-    console.log(GB_SIZE * getScreenFactor())
-    document.getElementById("ctx").width = GB_SIZE * getScreenFactor();
-    document.getElementById("ctx").height = GB_SIZE * getScreenFactor();
-    console.log(document.getElementById("ctx").width)
-	window.onkeydown = keyEventHandler;
-	window.onkeyup = keyEventHandler;
-}
-
-/*const GB_SIZE = 400; //gameboard size
-const PLAYER_SIZE = GB_SIZE/10;
-const BOMB_DETONATION_WIDTH = GB_SIZE/10*3;*/
 
 let canv = document.getElementById("ctx");
 let ctx = canv.getContext("2d");
 let socket = io();
+let resizeBy;
+
+window.onload = function() {
+    document.getElementById("newBtn").onclick = createGame;
+    document.getElementById("joinBtn").onclick = joinGame;
+    document.getElementById("quickpayBtn").onclick = quickGame;
+
+    //resize canvas
+    resizeBy = getScreenFactor();
+    canv.height = GB_SIZE * resizeBy;
+    canv.width = GB_SIZE * resizeBy;
+
+    //add keylistener
+	window.onkeydown = keyEventHandler;
+	window.onkeyup = keyEventHandler;
+}
+window.onresize = function() {
+    resizeBy = getScreenFactor();
+    canv.height = GB_SIZE * resizeBy;
+    canv.width = GB_SIZE * resizeBy;
+}
+
+
 
 //bool variables for moving direction
 //left (0) - up (1) - right (2) - down (3)
@@ -103,6 +109,10 @@ function joinGame() {
     socket.emit('joinGame', code);
 }
 
+function quickGame() {
+    socket.emit('quickGame');
+}
+
 socket.on('gameCode', (roomCode) => {
     console.log(roomCode);
     document.getElementById('gameCodeDisplay').innerText = "Game code: " + roomCode;
@@ -126,10 +136,6 @@ socket.on('lobbyFull', () => {
 
 
 socket.on('gameUpdate', (state) => {
-    const resizeBy = getScreenFactor();
-    canv.height = GB_SIZE * resizeBy;
-    canv.width = GB_SIZE * resizeBy;
-
     r_clearRect(ctx, GB_SIZE, GB_SIZE, resizeBy);
     renderPlayers(ctx, state.players, resizeBy);
     renderBombs(ctx, state.bombs, resizeBy);
@@ -138,7 +144,8 @@ socket.on('gameUpdate', (state) => {
     
     //Game started -> reset message
     let infoPanel = document.getElementById('bottomPanel');
-    if(infoPanel.innerText === "Waiting for lobby owner to start the game...\n") {
+    if( (infoPanel.innerText === "Waiting for lobby owner to start the game...\n") || 
+        (infoPanel.innerText === "Waiting for second player to join...\n")) {
         infoPanel.innerText = "";
     }
 });

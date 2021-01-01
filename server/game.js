@@ -13,7 +13,7 @@ import { getRandomColor } from './utils.js';
 
 const TIMER_INTERVAL = 20; //[ms] TODO: into constants.js
 const BOMB_MOVE_FACTOR = PLAYER_SIZE/2; //to place bomb in the middle of the player
-const BOMB_TIMER = 3/*s*/ * 1000/TIMER_INTERVAL; //time until detonation
+const BOMB_TIMER = 2/*s*/ * 1000/TIMER_INTERVAL; //time until detonation
 const BOMB_DETONATION_TIME = 1/*s*/ * 1000/TIMER_INTERVAL; //duration of detonation
 const INIT_BOMB_DETONATION_WIDTH = GB_SIZE/10*3;
 

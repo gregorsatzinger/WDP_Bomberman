@@ -7,7 +7,7 @@ export const INIT_MOVING_STEP = GB_SIZE/80; //how far does a player move by one 
 export const BOMB_RADIUS = PLAYER_SIZE/3;
 
 export const POWER_UPS_COUNT = 3;
-export const POWER_UPS_PROBABILITY = 0.2;
+export const POWER_UPS_PROBABILITY = 0.4;
 export const POWER_UPS = [];
 
 export const FIXED_OBSTACLES = [];

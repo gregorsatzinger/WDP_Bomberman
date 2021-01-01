@@ -1,12 +1,21 @@
-import { GB_SIZE, GB_FIELDS, FIELD_SIZE, PLAYER_SIZE, BOMB_RADIUS, FIXED_OBSTACLES, POWER_UPS_COUNT, POWER_UPS_PROBABILITY, POWER_UPS } from '../public/constants.js';
+import { GB_SIZE, 
+         GB_FIELDS, 
+         FIELD_SIZE, 
+         INIT_MOVING_STEP, 
+         PLAYER_SIZE,
+         BOMB_RADIUS,
+         FIXED_OBSTACLES, 
+         POWER_UPS_COUNT, 
+         POWER_UPS_PROBABILITY, 
+         POWER_UPS } from '../public/constants.js';
+
 import { getRandomColor } from './utils.js';
 
 const TIMER_INTERVAL = 20; //[ms] TODO: into constants.js
 const BOMB_MOVE_FACTOR = PLAYER_SIZE/2; //to place bomb in the middle of the player
 const BOMB_TIMER = 3/*s*/ * 1000/TIMER_INTERVAL; //time until detonation
 const BOMB_DETONATION_TIME = 1/*s*/ * 1000/TIMER_INTERVAL; //duration of detonation
-const BOMB_DETONATION_WIDTH = GB_SIZE/10*3;
-const MOVING_STEP = GB_SIZE/80; //how far does a player move by one timer interval --> speed
+const INIT_BOMB_DETONATION_WIDTH = GB_SIZE/10*3;
 
 export function initalGameState() {
 
@@ -35,6 +44,8 @@ export function initalGameState() {
             direction: 4,
             bomb_max_cooldown: BOMB_TIMER,  //cooldown after bomb-placing. initially until bomb explodes
             bomb_curr_cooldown: 0,
+            bomb_detonation_width: INIT_BOMB_DETONATION_WIDTH, //explosion radius of placed bombs
+            moving_step: INIT_MOVING_STEP,
             name: "P1"
         }, 
         {
@@ -47,6 +58,8 @@ export function initalGameState() {
             direction: 4,
             bomb_max_cooldown: BOMB_TIMER,  //cooldown after bomb-placing. initially until bomb explodes
             bomb_curr_cooldown: 0,
+            bomb_detonation_width: INIT_BOMB_DETONATION_WIDTH, //explosion radius of placed bombs
+            moving_step: INIT_MOVING_STEP,
             name: "P2"
             }
         ],
@@ -56,13 +69,16 @@ export function initalGameState() {
 }
 
 class Explosion {
-    constructor(x, y, var_obstacles) {
+    constructor(bomb, var_obstacles) {
+        let x = bomb.x;
+        let y = bomb.y
+        let explosion_range = bomb.detonation_width / 2;
         /***************** calculate range of explosion (explosion may be hitting (destroying) an obstacle) ******************/
 
         //indizes of bomb in obstacle-matrix
         let bomb_j = Math.floor(x / FIELD_SIZE);
         let bomb_i = Math.floor(y / FIELD_SIZE);
-        let explosion_range = BOMB_DETONATION_WIDTH / 2;
+        
 
         //nearest distance to obstacle in every direction
         let left = GB_FIELDS;
@@ -274,6 +290,8 @@ export class Room {
         
         return id;
     }
+    //players position is corrected according to surrounding obstacles and borders of gameboard.
+    //also collecting power ups is handled here
     validatePosition(player, x, y) {
         //outer boundaries
         if(x < 0) x = 0;
@@ -295,6 +313,7 @@ export class Room {
             //for fixed and variable obstacles
             for(let obstacle of [FIXED_OBSTACLES, this.gameState.var_obstacles]) {
                 //left side
+                //calculate index of both corners on the left side
                 let idx_1 = GB_FIELDS * lt_i + (lt_j-1);
                 let idx_2 = GB_FIELDS * rb_i + (lt_j-1);
                 //there is an obstacle/power up on the left side
@@ -302,7 +321,14 @@ export class Room {
                     obstacle[idx_2] !== false) && //bottom left corner
                                         x < lt_j * FIELD_SIZE) { //player touches left obstacle
                     if(obstacle[idx_1] === true || obstacle[idx_2] === true) { //player ran against obstacle
-                        x = lt_j * FIELD_SIZE;
+                        x = lt_j * FIELD_SIZE; //stop player
+                        
+                        //help player to avoid obstacle if the way is free at one of both corners
+                        if(obstacle[idx_1] === true && obstacle[idx_2] === false) {
+                            y++;
+                        } else if(obstacle[idx_1] === false && obstacle[idx_2] === true) {
+                            y--;
+                        }
                     } else { //player ran against power up
                         if(obstacle[idx_1] !== false) {
                             POWER_UPS[obstacle[idx_1]].upgradePlayer(player); //player collects power up --> upgrade
@@ -321,7 +347,14 @@ export class Room {
                     obstacle[idx_2] !== false) && //top right corner
                                                     y < lt_i * FIELD_SIZE) { //player touches top obstacle
                     if(obstacle[idx_1] === true || obstacle[idx_2] === true) { //player ran against obstacle
-                        y = lt_i * FIELD_SIZE;
+                        y = lt_i * FIELD_SIZE; //stop player
+
+                        //help player to avoid obstacle if the way is free at one of both corners
+                        if(obstacle[idx_1] === true && obstacle[idx_2] === false) {
+                            x++;
+                        } else if(obstacle[idx_1] === false && obstacle[idx_2] === true) {
+                            x--;
+                        }
                     } else { //player ran against power up
                         if(obstacle[idx_1] !== false) {
                             POWER_UPS[obstacle[idx_1]].upgradePlayer(player); //player collects power up --> upgrade
@@ -340,7 +373,14 @@ export class Room {
                     obstacle[idx_2] !== false) && //bottom right corner
                                     x+PLAYER_SIZE > (rb_j+1) * FIELD_SIZE) { //player touches right obstacle
                     if(obstacle[idx_1] === true || obstacle[idx_2] === true) { //player ran against obstacle
-                        x = (rb_j+1) * FIELD_SIZE - PLAYER_SIZE;
+                        x = (rb_j+1) * FIELD_SIZE - PLAYER_SIZE; //stop player
+
+                        //help player to avoid obstacle if the way is free at one of both corners
+                        if(obstacle[idx_1] === true && obstacle[idx_2] === false) {
+                            y++;
+                        } else if(obstacle[idx_1] === false && obstacle[idx_2] === true) {
+                            y--;
+                        }
                     } else { //player ran against power up
                         if(obstacle[idx_1] !== false) {
                             POWER_UPS[obstacle[idx_1]].upgradePlayer(player); //player collects power up --> upgrade
@@ -359,7 +399,14 @@ export class Room {
                     obstacle[idx_2] !== false) && //bottom right corner
                                     y+PLAYER_SIZE > (rb_i+1) * FIELD_SIZE) { //player touches bottom obstacle
                     if(obstacle[idx_1] === true || obstacle[idx_2] === true) { //player ran against obstacle
-                        y = (rb_i+1) * FIELD_SIZE - PLAYER_SIZE;
+                        y = (rb_i+1) * FIELD_SIZE - PLAYER_SIZE; //stop player
+
+                        //help player to avoid obstacle if the way is free at one of both corners
+                        if(obstacle[idx_1] === true && obstacle[idx_2] === false) {
+                            x++;
+                        } else if(obstacle[idx_1] === false && obstacle[idx_2] === true) {
+                            x--;
+                        }
                     } else { //player ran against power up
                         if(obstacle[idx_1] !== false) {
                             POWER_UPS[obstacle[idx_1]].upgradePlayer(player); //player collects power up --> upgrade
@@ -380,20 +427,20 @@ export class Room {
 
         switch(player.direction) {
             case 0:     //left
-                x_ = player.pos.x - MOVING_STEP;
+                x_ = player.pos.x - player.moving_step;
                 y_ = player.pos.y;
                 break;
             case 1:     //up
                 x_ = player.pos.x;
-                y_ = player.pos.y - MOVING_STEP;
+                y_ = player.pos.y - player.moving_step;
                 break;
             case 2:     //right
-                x_ = player.pos.x + MOVING_STEP;
+                x_ = player.pos.x + player.moving_step;
                 y_ = player.pos.y;
                 break;
             case 3:     //down
                 x_ = player.pos.x;
-                y_ = player.pos.y + MOVING_STEP;
+                y_ = player.pos.y + player.moving_step;
                 break;
             default:    //not moving
                 return;
@@ -430,7 +477,7 @@ export class Room {
                     bomb.detonated = true;
                     bomb.timer = BOMB_DETONATION_TIME; //reset timer to detonation time
                     //calc explosion range and destroy variable obstacles within explosion
-                    bombs[idx].explosion = new Explosion(bomb.x, bomb.y, this.gameState.var_obstacles); 
+                    bombs[idx].explosion = new Explosion(bomb, this.gameState.var_obstacles); 
                 }
             } else { //bomb is exploding currently
                 //check if hitting a player
@@ -464,13 +511,13 @@ export class Room {
         //only the first 2 players have the permission to play
         if(id < 2) {
             let player = this.gameState.players[id];
-            if(player.bomb_curr_cooldown === 0) { //player is able to place bomb
+            if(player.bomb_curr_cooldown <= 0) { //player is able to place bomb
                 player.bomb_curr_cooldown = player.bomb_max_cooldown; //set cooldown
 
                 this.gameState.bombs.push({
                     x: player.pos.x + BOMB_MOVE_FACTOR,
                     y: player.pos.y + BOMB_MOVE_FACTOR,
-                    radius: BOMB_RADIUS, //TODO: export constant to client
+                    detonation_width: player.bomb_detonation_width,
                     timer: BOMB_TIMER,
                     detonated: false
                 });

@@ -1,4 +1,4 @@
-import {GB_SIZE, FIXED_OBSTACLES} from '/constants.js';
+import {GB_SIZE, FIXED_OBSTACLES} from '/js/constants.js';
 import {r_clearRect, renderPlayers, renderBombs, renderObstacles, getScreenFactor} from '/js/drawing.js'
 
 let RESIZE_FACTOR = getScreenFactor();

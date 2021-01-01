@@ -7,7 +7,7 @@ import { GB_SIZE,
          FIXED_OBSTACLES, 
          POWER_UPS_COUNT, 
          POWER_UPS_PROBABILITY, 
-         POWER_UPS } from '../public/constants.js';
+         POWER_UPS } from '../public/js/constants.js';
 
 import { getRandomColor } from './utils.js';
 

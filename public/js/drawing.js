@@ -1,4 +1,4 @@
-import {PLAYER_SIZE, BOMB_RADIUS, GB_FIELDS, FIELD_SIZE, GB_SIZE, POWER_UPS} from '/constants.js';
+import {PLAYER_SIZE, BOMB_RADIUS, GB_FIELDS, FIELD_SIZE, GB_SIZE, POWER_UPS} from '/js/constants.js';
 export function getScreenFactor() {
     return window.innerHeight * 0.7 / GB_SIZE;
 }

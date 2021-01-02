@@ -1,13 +1,13 @@
-# Quick guide
-* git clone https://github.com/gregorsatzinger/WDP_Bomberman.git
-* npm install
-* Bevor Änderungen vorgenommen werden immer git pull -> Updated local rep -> Erspart uns hoffentlich Mergekonflikte
-* Rechtsklick im Ordner -> Git GUI Here -> Stage Changed -> Commit Message eingeben -> Commit -> Push (Erst danach ist das GitHub Rep upgedated)
-In einem Commit grundsätzlich immer nur eine Thematik/Issue bearbeiten. Also z.B. 1. Commit: "Implement feature 1" 2. Commit: "Bugfix blabla" 3. Commit "Implement feature 2" -> Viele commits schaden nicht
+# WDP Projekt von {Nachname} {Vorname} ({Matrikelnr.})
 
-# WDP_Bomberman
-* Projekt-Name: {Name einfügen}
+* Projekt-Name: Bomberman
 * Projekt-Typ: Game
-* Externe JS/CSS Bibliotheken: {Liste aller verwendeten externer Bibliotheken}
+* Externe JS/CSS Bibliotheken: 
+  ExpressJS, Socket.io
 * Zeitaufwand (h): {Grober Zeitaufwand für das Projekt}
-* Getting started: {Kurze Beschreibung, wie das Projekt lokal gestartet werden kann}
+
+* Getting started: 
+1) npm init
+2) node index.js
+3) In einem beliebigen Browser localhost:3000 starten
+Hinweis: Es werden wie in der Vorlesung gezeigt anstelle von require import verwendet. Unter Verwendung einer aktuellen node Version macht das keine Probleme, bei älteren Versionen muss das Projekt unter Umständen mit der experimental-modules flag gestartet werden (node --experimental-modules index.js).

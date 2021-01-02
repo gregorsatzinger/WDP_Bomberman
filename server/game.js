@@ -215,10 +215,9 @@ class Explosion {
         //there is an obstacle
         if(var_obstacles[idx] === true) {
             //obstacle is destroyed - maybe replaced by power up
-            let rand = Math.random();
-            if(rand < POWER_UPS_PROBABILITY) {
+            if(Math.random() < POWER_UPS_PROBABILITY) {
                 //index in POWER_UPS array
-                var_obstacles[idx] = Math.floor(rand * POWER_UPS_COUNT);
+                var_obstacles[idx] = Math.floor(Math.random() * POWER_UPS_COUNT);
             } else {
                 var_obstacles[idx] = false; //obstacle is destroyed
             }

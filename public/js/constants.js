@@ -3,11 +3,11 @@ export const GB_SIZE = 400; //gameboard size
 export const GB_FIELDS = 11; //fields within GB_SIZE
 export const FIELD_SIZE = GB_SIZE / GB_FIELDS; //size of one field
 export const PLAYER_SIZE = GB_SIZE/15;
-export const INIT_MOVING_STEP = GB_SIZE/80;
+export const INIT_MOVING_STEP = GB_SIZE/80; //how far does a player move by one timer interval (speed)
 export const BOMB_RADIUS = PLAYER_SIZE/3;
 
 export const POWER_UPS_COUNT = 3;
-export const POWER_UPS_PROBABILITY = 0.2;
+export const POWER_UPS_PROBABILITY = 0.4;
 export const POWER_UPS = [];
 
 export const FIXED_OBSTACLES = [];
@@ -107,4 +107,3 @@ export class ExplosionRange {
 POWER_UPS.push(new Speed());
 POWER_UPS.push(new BombPlacingSpeed());
 POWER_UPS.push(new ExplosionRange());
-

@@ -14,7 +14,7 @@ import { getRandomColor } from './utils.js';
 const TIMER_INTERVAL = 20; //[ms] TODO: into constants.js
 const BOMB_MOVE_FACTOR = PLAYER_SIZE/2; //to place bomb in the middle of the player
 const BOMB_TIMER = 2/*s*/ * 1000/TIMER_INTERVAL; //time until detonation
-const BOMB_DETONATION_TIME = 1/*s*/ * 1000/TIMER_INTERVAL; //duration of detonation
+const BOMB_DETONATION_TIME = 0.7/*s*/ * 1000/TIMER_INTERVAL; //duration of detonation
 const INIT_BOMB_DETONATION_WIDTH = GB_SIZE/10*3;
 
 export function initalGameState() {
@@ -215,9 +215,10 @@ class Explosion {
         //there is an obstacle
         if(var_obstacles[idx] === true) {
             //obstacle is destroyed - maybe replaced by power up
-            if(Math.random() < POWER_UPS_PROBABILITY) { //under variable obstacle may be a power up
+            let rand = Math.random();
+            if(rand < POWER_UPS_PROBABILITY) {
                 //index in POWER_UPS array
-                var_obstacles[idx] = Math.floor(Math.random() * POWER_UPS_COUNT);
+                var_obstacles[idx] = Math.floor(rand * POWER_UPS_COUNT);
             } else {
                 var_obstacles[idx] = false; //obstacle is destroyed
             }

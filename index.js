@@ -88,7 +88,7 @@ io.on('connection', (player) => {
         let availableRoom = "";
         //Find available room
         Object.entries(clientRooms).forEach(([key, value]) => {
-            if(!value.isPrivate && !value.isRunning) {
+            if(!value.isPrivate && !value.isRunning && value.playerCount == 1) {
                 availableRoom = key;
             }
         });
@@ -134,6 +134,7 @@ io.on('connection', (player) => {
         //update to room system
         if ( clientRooms[player.roomCode] !== undefined ) { //room exists
             clientRooms[player.roomCode].removePlayer();
+            clientRooms[player.roomCode].isRunning = false;
 
             //last player has left --> delete room
             if(clientRooms[player.roomCode].isEmpty()) {

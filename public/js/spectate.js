@@ -8,9 +8,9 @@ let socket = io();
 let panel = document.getElementById("spectatePanel");   
 const ctxs = [];
 
-function createGamePanel() {
+function createGamePanel(roomCode) {
     const gamePanel = document.createElement('canvas');
-    gamePanel.onclick = () => {window.location.href = '/'}; //redirect to start page
+    gamePanel.onclick = () => {window.location.href = '/'+roomCode}; //redirect to start page
     gamePanel.height = GB_SIZE * RESIZE_FACTOR / grid_columns;
     gamePanel.width = GB_SIZE * RESIZE_FACTOR / grid_columns;
     gamePanel.style.setProperty('background-color', '#e7e7e7');
@@ -40,7 +40,7 @@ socket.on('gameList', (list) => {
     panel.style.setProperty('grid-template-columns', 'repeat(' + grid_columns + ', 1fr)');
     
     for(let i = 0; i < list.length; i++) {
-        let p = createGamePanel();
+        let p = createGamePanel(list[i]);
         let ctx = p.getContext("2d");
 
         const room = {};

@@ -13,13 +13,17 @@ import {Room} from './server/game.js'
 
 app.use(express.static(process.cwd() + '/public'));
 
+app.get('/spectate', (req, res) => {
+    res.sendFile(process.cwd() + '/client/spectate.html');
+});
+app.get('/:roomCode', (req, res) => {
+    res.sendFile(process.cwd() + '/client/index.html');
+});
 app.get('/', (req, res) => {
     res.sendFile(process.cwd() + '/client/index.html');
 });
 
-app.get('/spectate', (req, res) => {
-    res.sendFile(process.cwd() + '/client/spectate.html');
-});
+
 
 
 const TIMER_INTERVAL = 20;
@@ -131,10 +135,8 @@ io.on('connection', (player) => {
     }
     
     function handleDisconnect() {
-        //update to room system
         if ( clientRooms[player.roomCode] !== undefined ) { //room exists
             clientRooms[player.roomCode].removePlayer();
-            clientRooms[player.roomCode].isRunning = false;
 
             //last player has left --> delete room
             if(clientRooms[player.roomCode].isEmpty()) {
@@ -144,9 +146,11 @@ io.on('connection', (player) => {
             } else if(player.number === 0) {
                 io.in(player.roomCode).emit('log', {"type": "info" ,"message": "Opponent left the game"});
                 clientRooms[player.roomCode].gameResult = "p2";
+                clientRooms[player.roomCode].isRunning = false;
             } else if(player.number === 1) {
                 io.in(player.roomCode).emit('log', {"type": "info" ,"message": "Opponent left the game"});
                 clientRooms[player.roomCode].gameResult = "p1";
+                clientRooms[player.roomCode].isRunning = false;
             }
         }
     }

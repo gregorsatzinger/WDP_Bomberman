@@ -18,7 +18,11 @@ window.onload = function() {
 
     //add keylistener
 	window.onkeydown = keyEventHandler;
-	window.onkeyup = keyEventHandler;
+    window.onkeyup = keyEventHandler;
+    
+    if(window.location.pathname.length === 7) {
+        socket.emit('joinGame', window.location.pathname.substring(1));
+    }
 }
 window.onresize = function() {
     resizeBy = getScreenFactor();

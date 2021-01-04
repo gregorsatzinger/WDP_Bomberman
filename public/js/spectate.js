@@ -10,6 +10,7 @@ const ctxs = [];
 
 function createGamePanel() {
     const gamePanel = document.createElement('canvas');
+    gamePanel.onclick = () => {window.location.href = '/'}; //redirect to start page
     gamePanel.height = GB_SIZE * RESIZE_FACTOR / grid_columns;
     gamePanel.width = GB_SIZE * RESIZE_FACTOR / grid_columns;
     gamePanel.style.setProperty('background-color', '#e7e7e7');

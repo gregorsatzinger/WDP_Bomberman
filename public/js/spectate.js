@@ -7,8 +7,8 @@ let grid_columns;
 let socket = io();
 let panel = document.getElementById("spectatePanel");   
 const ctxs = [];
-let var_obstacles = [];
-let bombs = [];
+let var_obstacles = {};
+let bombs = {};
 
 function createGamePanel(roomCode) {
     const gamePanel = document.createElement('canvas');
@@ -80,12 +80,11 @@ socket.on('gameUpdate', (state) => {
     if(state.bombs !== undefined) {
         bombs[state.room] = state.bombs;
     }
-    renderBombs(ctx, bombs[state.room], resizeBy);
+    renderBombs(ctx, bombs[state.room], RESIZE_FACTOR/grid_columns);
 
     if(state.var_obstacles !== undefined) {
         var_obstacles[state.room] = state.var_obstacles;
     }
-
-    renderObstacles(ctx, var_obstacles[state.room], "#DEB887", resizeBy);  //brown
-    renderObstacles(ctx, FIXED_OBSTACLES, "#A8A8A8", resizeBy); //gray
+    renderObstacles(ctx, var_obstacles[state.room], "#DEB887", RESIZE_FACTOR/grid_columns);  //brown
+    renderObstacles(ctx, FIXED_OBSTACLES, "#A8A8A8", RESIZE_FACTOR/grid_columns); //gray
 });

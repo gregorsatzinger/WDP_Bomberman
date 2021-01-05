@@ -45,8 +45,7 @@ export function initalGameState() {
             bomb_max_cooldown: BOMB_TIMER,  //cooldown after bomb-placing. initially until bomb explodes
             bomb_curr_cooldown: 0,
             bomb_detonation_width: INIT_BOMB_DETONATION_WIDTH, //explosion radius of placed bombs
-            moving_step: INIT_MOVING_STEP,
-            name: "P1"
+            moving_step: INIT_MOVING_STEP
         }, 
         {
             pos: {
@@ -59,12 +58,13 @@ export function initalGameState() {
             bomb_max_cooldown: BOMB_TIMER,  //cooldown after bomb-placing. initially until bomb explodes
             bomb_curr_cooldown: 0,
             bomb_detonation_width: INIT_BOMB_DETONATION_WIDTH, //explosion radius of placed bombs
-            moving_step: INIT_MOVING_STEP,
-            name: "P2"
+            moving_step: INIT_MOVING_STEP
             }
         ],
         bombs: [],
-        var_obstacles: var_obstacles
+        bombs_changed: false, //only need game_update when true
+        var_obstacles: var_obstacles,
+        obstacles_changed: true //only need game_update when true
     };
 }
 
@@ -339,6 +339,7 @@ export class Room {
                             POWER_UPS[obstacle[idx_2]].upgradePlayer(player); //player collects power up --> upgrade
                             obstacle[idx_2] = false; //delete power up
                         }
+                        this.gameState.obstacles_changed = true; //update obstacles (power ups)
                     }                   
                 } 
                 //upper side
@@ -365,6 +366,7 @@ export class Room {
                             POWER_UPS[obstacle[idx_2]].upgradePlayer(player); //player collects power up --> upgrade
                             obstacle[idx_2] = false; //delete power up
                         }
+                        this.gameState.obstacles_changed = true; //update obstacles (power ups)
                     }   
                 }
                 //right side
@@ -391,6 +393,7 @@ export class Room {
                             POWER_UPS[obstacle[idx_2]].upgradePlayer(player); //player collects power up --> upgrade
                             obstacle[idx_2] = false; //delete power up
                         }
+                        this.gameState.obstacles_changed = true; //update obstacles (power ups)
                     }  
                 }
                 //lower side
@@ -417,6 +420,7 @@ export class Room {
                             POWER_UPS[obstacle[idx_2]].upgradePlayer(player); //player collects power up --> upgrade
                             obstacle[idx_2] = false; //delete power up
                         }
+                        this.gameState.obstacles_changed = true; //update obstacles (power ups)
                     } 
                 }
             }
@@ -475,6 +479,9 @@ export class Room {
 
             if(!bomb.detonated) { //bomb is alive
                 if(bomb.timer <= 0) { //bomb detonates now
+                    this.gameState.bombs_changed = true;
+                    this.gameState.obstacles_changed = true; //may get destroyed by explosion
+
                     bomb.detonated = true;
                     bomb.timer = BOMB_DETONATION_TIME; //reset timer to detonation time
                     //calc explosion range and destroy variable obstacles within explosion
@@ -496,6 +503,7 @@ export class Room {
                 }
 
                 if(bomb.timer <= 0) { //detonation is over
+                    this.gameState.bombs_changed = true;
                     bombs.splice(bombs.indexOf(bomb),1); //delete bomb
                 }
             }
@@ -514,6 +522,8 @@ export class Room {
             let player = this.gameState.players[id];
             if(player.bomb_curr_cooldown <= 0) { //player is able to place bomb
                 player.bomb_curr_cooldown = player.bomb_max_cooldown; //set cooldown
+
+                this.gameState.bombs_changed = true;
 
                 this.gameState.bombs.push({
                     x: player.pos.x + BOMB_MOVE_FACTOR,

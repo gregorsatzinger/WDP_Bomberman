@@ -1,10 +1,20 @@
-import {GB_SIZE, FIXED_OBSTACLES} from '/js/constants.js';
+import {GB_SIZE, FIXED_OBSTACLES, GB_FIELDS} from '/js/constants.js';
 import {r_clearRect, renderPlayers, renderBombs, renderObstacles, getScreenFactor} from '/js/drawing.js'
 
 let canv = document.getElementById("ctx");
 let ctx = canv.getContext("2d");
 let socket = io();
 let resizeBy;
+let bombs = [];
+
+//initially empty var_obstacles (received by server)
+let var_obstacles = [];
+
+for(let i = 0; i < GB_FIELDS; i++) {
+    for(let j = 0; j < GB_FIELDS; j++) {
+        var_obstacles[GB_FIELDS * i + j] = false;
+    }
+}
 
 window.onload = function() {
     document.getElementById("newBtn").onclick = createGame;
@@ -142,9 +152,18 @@ socket.on('lobbyFull', () => {
 socket.on('gameUpdate', (state) => {
     r_clearRect(ctx, GB_SIZE, GB_SIZE, resizeBy);
     renderPlayers(ctx, state.players, resizeBy);
-    renderBombs(ctx, state.bombs, resizeBy);
+    
+    if(state.bombs !== undefined) {
+        bombs = state.bombs;
+    }
+    renderBombs(ctx, bombs, resizeBy);
+
+    if(state.var_obstacles !== undefined) {
+        var_obstacles = state.var_obstacles;
+    }
+    renderObstacles(ctx, var_obstacles, "#DEB887", resizeBy);  //brown
     renderObstacles(ctx, FIXED_OBSTACLES, "#A8A8A8", resizeBy); //gray
-    renderObstacles(ctx, state.var_obstacles, "#DEB887", resizeBy);  //brown
+    
     
     //Game started -> reset message
     let infoPanel = document.getElementById('bottomPanel');

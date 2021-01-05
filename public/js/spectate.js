@@ -1,4 +1,4 @@
-import {GB_SIZE, FIXED_OBSTACLES} from '/js/constants.js';
+import {GB_SIZE, FIXED_OBSTACLES, GB_FIELDS} from '/js/constants.js';
 import {r_clearRect, renderPlayers, renderBombs, renderObstacles, getScreenFactor} from '/js/drawing.js'
 
 let RESIZE_FACTOR = getScreenFactor();
@@ -7,6 +7,8 @@ let grid_columns;
 let socket = io();
 let panel = document.getElementById("spectatePanel");   
 const ctxs = [];
+let var_obstacles = [];
+let bombs = [];
 
 function createGamePanel(roomCode) {
     const gamePanel = document.createElement('canvas');
@@ -46,6 +48,16 @@ socket.on('gameList', (list) => {
         const room = {};
         room.ctx = ctx;
         room.id = list[i];
+
+        //init
+        bombs[room.id] = [];
+        var_obstacles[room.id] = [];
+        for(let i = 0; i < GB_FIELDS; i++) {
+            for(let j = 0; j < GB_FIELDS; j++) {
+                var_obstacles[room.id][GB_FIELDS * i + j] = false;
+            }
+        }
+
         ctxs.push(room);  
         socket.emit('joinGame', room.id);
 
@@ -64,7 +76,16 @@ socket.on('gameUpdate', (state) => {
 
     r_clearRect(ctx, GB_SIZE, GB_SIZE, RESIZE_FACTOR/grid_columns);
     renderPlayers(ctx, state.players, RESIZE_FACTOR/grid_columns);
-    renderBombs(ctx, state.bombs, RESIZE_FACTOR/grid_columns);
-    renderObstacles(ctx, FIXED_OBSTACLES, "#A8A8A8", RESIZE_FACTOR/grid_columns); //gray
-    renderObstacles(ctx, state.var_obstacles, "#DEB887", RESIZE_FACTOR/grid_columns);  //brown
+
+    if(state.bombs !== undefined) {
+        bombs[state.room] = state.bombs;
+    }
+    renderBombs(ctx, bombs[state.room], resizeBy);
+
+    if(state.var_obstacles !== undefined) {
+        var_obstacles[state.room] = state.var_obstacles;
+    }
+
+    renderObstacles(ctx, var_obstacles[state.room], "#DEB887", resizeBy);  //brown
+    renderObstacles(ctx, FIXED_OBSTACLES, "#A8A8A8", resizeBy); //gray
 });

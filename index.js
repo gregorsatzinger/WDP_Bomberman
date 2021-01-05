@@ -60,6 +60,10 @@ io.on('connection', (player) => {
                 clientRooms[code].isReady = true;
             } else {
                 player.emit('log', {"type": "info" ,"message": "Spectating the game..."})
+
+                //TODO update-method
+                clientRooms[code].gameState.bombs_changed = true;
+                clientRooms[code].gameState.obstacles_changed = true;
             }
         }
     }
@@ -173,9 +177,40 @@ function startGameLoop(room) {
             room.update();
             
             // Send gamestate to all players in room
-            const obj = room.gameState;
-            obj.room = room.roomCode; 
-            io.in(room.roomCode).emit('gameUpdate', obj);
+            const state = room.gameState;
+
+            /* client doesn't need all information of gamestate */
+            const gameUpdate = {
+                players: [],
+                room: room.roomCode
+            };
+
+            state.players.forEach(p => {
+                gameUpdate.players.push({
+                    pos: p.pos,
+                    color: p.color
+                })
+            });
+
+            if(state.bombs_changed) {
+                gameUpdate.bombs = [];
+                state.bombs.forEach(b => {
+                    gameUpdate.bombs.push({
+                        x: b.x,
+                        y: b.y,
+                        detonated: b.detonated,
+                        explosion: b.explosion
+                    })
+                });
+                state.bombs_changed = false;
+            }
+
+            if(state.obstacles_changed) {
+                gameUpdate.var_obstacles = state.var_obstacles;
+                state.obstacles_changed = false;
+            }
+
+            io.in(room.roomCode).emit('gameUpdate', gameUpdate);
             
             //Check if game is over
             if(room.gameResult != "-") {

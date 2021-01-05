@@ -58,26 +58,6 @@ function renderObstacle(ctx, i, j, color, resizeFactor) {
     ctx.stroke();
 }
 
-function renderPowerup(ctx, i, j, powerup, resizeFactor) {
-    switch (powerup) {
-        case 'Speed':
-            ctx.fillStyle = "#ff0000";
-            break;
-        case 'BombPlacingSpeed':
-            ctx.fillStyle = "#000000";
-            break;
-        case 'ExplosionRange':
-            ctx.fillStyle = "#ffa500";
-        default:
-            break;
-    }
-
-    ctx.beginPath();
-    r_rect(ctx, j * FIELD_SIZE, i * FIELD_SIZE, FIELD_SIZE, FIELD_SIZE, resizeFactor);
-    ctx.closePath();
-    ctx.fill();
-}
-
 //in var_obstacles also the power ups are safed
 export function renderObstacles(ctx, obstacles, color, resizeFactor) {
     for(let i = 0; i < GB_FIELDS; i++) {
@@ -89,7 +69,6 @@ export function renderObstacles(ctx, obstacles, color, resizeFactor) {
                 } else { //power up
                     let powerup_idx = obstacles[GB_FIELDS * i + j];
                     POWER_UPS[powerup_idx].render(ctx, i, j, resizeFactor);
-                    //renderPowerup(ctx, i, j, powerup, resizeFactor);
                 }
             }
         }

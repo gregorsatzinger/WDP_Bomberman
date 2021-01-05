@@ -45,13 +45,11 @@ io.on('connection', (player) => {
     function handleJoinGame(code) {
         if(clientRooms[code] === undefined) {
             player.emit('log', {"type": "error" ,"message": "Invalid game code entered."})
-            console.log("Room does not exist!");
         } else {
             //Join lobby
             player.roomCode = code;
             player.number = clientRooms[code].addPlayer();
             player.join(code);
-            console.log('joined lobby');
             player.emit('log', {"type": "success" ,"message": "Joined lobby successfully."})
 
             //Second player joined -> p1 can start game
@@ -70,7 +68,6 @@ io.on('connection', (player) => {
         //only join if client has no room yet
         if(player.roomCode !== -1) {
             player.emit('log', {"type": "error" ,"message": "Can't create more than one lobby."})
-            console.log("Client can't create more than one lobby!");
         } else {
             let roomCode = makeid(6);
             clientRooms[roomCode] = new Room(roomCode);
@@ -80,7 +77,6 @@ io.on('connection', (player) => {
             player.join(roomCode);
             player.emit('gameCode', roomCode);
 
-            console.log('opened lobby');
             player.emit('log', {"type": "success" ,"message": "Created lobby successfully."})
             player.emit('log', {"type": "info" ,"message": "Waiting for second player to join..."})
 
@@ -92,12 +88,13 @@ io.on('connection', (player) => {
         let availableRoom = "";
         //Find available room
         Object.entries(clientRooms).forEach(([key, value]) => {
-            if(!value.isPrivate && !value.isRunning && value.playerCount == 1) {
+            //Look for a game thats not private, not running, has one player waiting and isnt finished
+            if(!value.isPrivate && !value.isRunning && value.playerCount == 1 && value.gameResult === '-') {
                 availableRoom = key;
             }
         });
         //no lobby found -> create new one
-        if(availableRoom == "") {
+        if(availableRoom === "") {
             //Create new game and sets player.roomCode to created lobby
             handleCreateGame();
             clientRooms[player.roomCode].isPrivate = false;

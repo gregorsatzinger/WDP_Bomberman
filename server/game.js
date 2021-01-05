@@ -291,6 +291,10 @@ export class Room {
         
         return id;
     }
+    sendUpdate() {
+        this.gameState.bombs_changed = true;
+        this.gameState.obstacles_changed = true;
+    }
     //players position is corrected according to surrounding obstacles and borders of gameboard.
     //also collecting power ups is handled here
     validatePosition(player, x, y) {

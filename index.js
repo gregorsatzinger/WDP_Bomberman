@@ -14,11 +14,13 @@ import {Room} from './server/game.js'
 app.use(express.static(process.cwd() + '/public'));
 
 app.get('/spectate', (req, res) => {
+    res.sendFile(process.cwd() + '/client/spectate.html');
+    /* Use this code for presentation to reduce server load
     if(req.connection.remoteAddress === "::1") {
         res.sendFile(process.cwd() + '/client/spectate.html');
     } else {
         res.sendFile(process.cwd() + '/client/index.html');
-    }
+    }*/
 });
 app.get('/:roomCode', (req, res) => {
     res.sendFile(process.cwd() + '/client/index.html');

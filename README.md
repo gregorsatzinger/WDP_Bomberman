@@ -13,7 +13,7 @@
 
 Hinweis: Es wird wie in der Vorlesung besprochen, import anstelle von require verwendet. Unter Verwendung einer aktuellen node Version macht das keine Probleme, bei älteren Versionen muss das Projekt unter Umständen mit der experimental-modules flag gestartet werden (node --experimental-modules index.js).
 
-* Beschreibung
+## Beschreibung
 Implementierung einer Multiplayer-Version von Bomberman:
 Dabei sollen jeweils zwei Spieler einem Spiel beitreten können. Sie treten gegen einander an und versuchen mit Hilfe von Bomben den Gegner zu zerstören. Mit Hilfe der Pfeiltasten sollen sich die Spieler innerhalb des Spielfelds bewegen können.
 

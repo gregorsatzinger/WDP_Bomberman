@@ -20,6 +20,6 @@
   "homepage": "https://github.com/gregorsatzinger/WDP_Bomberman#readme",
   "dependencies": {
     "express": "^4.17.1",
-    "socket.io": "^3.0.4"
+    "socket.io": "^3.1.2"
   }
 }
